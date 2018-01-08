@@ -1,0 +1,4 @@
+-x
+c++
+-I/home/oscar/github/nes/build/../nes/inc
+-std=c++11

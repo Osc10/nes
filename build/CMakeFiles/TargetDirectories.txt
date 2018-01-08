@@ -1,0 +1,3 @@
+/home/oscar/github/nes/build/CMakeFiles/rebuild_cache.dir
+/home/oscar/github/nes/build/CMakeFiles/nes.dir
+/home/oscar/github/nes/build/CMakeFiles/edit_cache.dir
