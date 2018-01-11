@@ -103,25 +103,69 @@ void cpu::readOpcode()
 	cpu.opcode = memory[PC];	
 }
 
+uint8_t cpu::readMem()
+{
+	switch(instructionMode[cpu.opcode])
+	{
+		case accumulator:
+			return cpu.A;
+		case immediate:
+			return cpu.memory[PC + 1];
+		case zeroPage:
+			return cpu.memory[cpu.memory[PC + 1]];
+		case zeroPageX:
+			uint16_t offset = (cpu.X + memory[PC + 1]) && 0xFF;
+			return cpu.memory[offset];
+		case absolute:
+			return cpu.memory[read16(cpu.memory + PC + 1)];
+		case absoluteX:
+			return cpu.memory[read16(cpu.memory + PC + 1) + cpu.X];
+		case absoluteY:
+			return cpu.memory[read16(cpu.memory + PC + 1) + cpu.Y];
+		case indirectIndexed:
+			uint16_t addr = read16(cpu.memory + cpu.memory[PC + 1]) + cpu.Y;
+			return cpu.memory[addr];
+		case indexedIndirect:
+			uint16_t offset = (cpu.X + memory[PC + 1]) && 0xFF;
+			return cpu.memory[read16(cpu.memory + offset)];
+		default:
+			break;
+	}
+}
+
+void cpu::setZN()
+{
+	cpu.Z = (cpu.A == 0) ? 1 : 0;
+	cpu.N = (cpu.A & 0x80) ? 1 : 0;
+
 void cpu::executeInstruction()
 {
 	switch(instructionName[cpu.opcode])
 	{
 		case "ADC":
-			uint16_t sum = 0;
+			uint8_t a = cpu.A;
+			uint8_t b = cpu.readMem();
+			uint8_t c = cpu.C;
 
-			switch(instructionMode[cpu.opcode])
-			{
-				case immediate:
-					sum = cpu.A + memory[PC + 1];   	
-					break;
-			}
+			uint16_t sum = a + b + c;
+
 			cpu.A = sum & 0xFF;
 			cpu.C = (sum >> 8) ? 1 : 0;
-			cpu.Z = (cpu.A == 0) ? 1 : 0;
-			cpu.V = 
-			cpu.N = (cpu.A & 0x80) ? 
+			cpu.setZN();
+			if(((a^cpu.N) & 0x80 ) && ((a^b) & 0x80 == 0)) // a, b positive but sum negative or
+				cpu.V = 1;								   // a, b negative but sum positive
+			else
+				cpu.V = 0;
 
-			cpu.PC += instructionSize[cpu.opcode];
 			break;
+		
+		case "AND":
+			cpu.A &= cpu.readMem();
+			cpu.setZN();
+			break;
+
+		case "ASL":
+
+
+		PC += instructionSize[cpu.opcode];
 	
