@@ -1,7 +1,7 @@
-#include <cstdint>
 #include <iostream>
+#include <memory.h>
 
-class cpu // Implementation of the 2A03 processor
+class CPU // Implementation of the 2A03 processor
 {
 	uint8_t A; // Accumulator
 	uint8_t X, Y; // Index Registers
@@ -15,9 +15,10 @@ class cpu // Implementation of the 2A03 processor
 	uint8_t S; // Stack Pointer
 	uint16_t PC; // Program Counter
 
-	uint8_t memory[65535]; 
 
 	uint8_t opcode;
+
+	Memory memory;
 
 	uint8_t readMem();
 	void writeMem(uint8_t val);

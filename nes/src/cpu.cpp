@@ -61,18 +61,18 @@ uint8_t instructionSize[256] = {
 
 #define read16(address) ((address)[0] | ((address)[1] << 8))
 
-inline void cpu::setZN(uint8_t val)
+inline void CPU::setZN(uint8_t val)
 {
 	Z = (val == 0) ? 1 : 0;
 	N = (val & 0x80) ? 1 : 0;
 }
 
-inline void cpu::readOpcode()
+inline void CPU::readOpcode()
 {
-	opcode = memory[PC];	
+	opcode = memory.mem[PC];	
 }
 
-uint8_t cpu::readMem()
+uint8_t CPU::readMem()
 {
 	switch(instructionMode[opcode])
 	{
@@ -80,31 +80,31 @@ uint8_t cpu::readMem()
 		case accumulator:
 			return A;
 		case immediate:
-			return memory[PC + 1];
+			return memory.mem[PC + 1];
 		case zeroPage:
-			return memory[memory[PC + 1]];
+			return memory.mem[memory.mem[PC + 1]];
 		case zeroPageX:
-			offset = (X + memory[PC + 1]) && 0xFF;
-			return memory[offset];
+			offset = (X + memory.mem[PC + 1]) && 0xFF;
+			return memory.mem[offset];
 		case absolute:
-			return memory[read16(memory + PC + 1)];
+			return memory.mem[read16(memory.mem + PC + 1)];
 		case absoluteX:
-			return memory[read16(memory + PC + 1) + X];
+			return memory.mem[read16(memory.mem + PC + 1) + X];
 		case absoluteY:
-			return memory[read16(memory + PC + 1) + Y];
+			return memory.mem[read16(memory.mem + PC + 1) + Y];
 		case indirectIndexed:
-			addr = read16(memory + memory[PC + 1]) + Y;
-			return memory[addr];
+			addr = read16(memory.mem + memory.mem[PC + 1]) + Y;
+			return memory.mem[addr];
 		case indexedIndirect:
-			offset = (X + memory[PC + 1]) && 0xFF;
-			return memory[read16(memory + offset)];
+			offset = (X + memory.mem[PC + 1]) && 0xFF;
+			return memory.mem[read16(memory.mem + offset)];
 		default:
 			std::cerr << "Invalid opcode: " << opcode << "\n";
 			return 1;
 	}
 }
 
-void cpu::writeMem(uint8_t val)
+void CPU::writeMem(uint8_t val)
 {
 	switch(instructionMode[opcode])
 	{
@@ -113,31 +113,31 @@ void cpu::writeMem(uint8_t val)
 			A = val;
 			break;
 		case immediate:
-			memory[PC + 1] = val;
+			memory.mem[PC + 1] = val;
 			break;
 		case zeroPage:
-			memory[memory[PC + 1]] = val;
+			memory.mem[memory.mem[PC + 1]] = val;
 			break;
 		case zeroPageX:
-			offset = (X + memory[PC + 1]) && 0xFF;
-			memory[offset] = val;
+			offset = (X + memory.mem[PC + 1]) && 0xFF;
+			memory.mem[offset] = val;
 			break;
 		case absolute:
-			memory[read16(memory + PC + 1)] = val;
+			memory.mem[read16(memory.mem + PC + 1)] = val;
 			break;
 		case absoluteX:
-			memory[read16(memory + PC + 1) + X] = val;
+			memory.mem[read16(memory.mem + PC + 1) + X] = val;
 			break;
 		case absoluteY:
-			memory[read16(memory + PC + 1) + Y] = val;
+			memory.mem[read16(memory.mem + PC + 1) + Y] = val;
 			break;
 		case indirectIndexed:
-			addr = read16(memory + memory[PC + 1]) + Y;
-			memory[addr] = val;
+			addr = read16(memory.mem + memory.mem[PC + 1]) + Y;
+			memory.mem[addr] = val;
 			break;
 		case indexedIndirect:
-			offset = (X + memory[PC + 1]) && 0xFF;
-			memory[read16(memory + offset)] = val;
+			offset = (X + memory.mem[PC + 1]) && 0xFF;
+			memory.mem[read16(memory.mem + offset)] = val;
 			break;
 		default:
 			break;
@@ -145,14 +145,14 @@ void cpu::writeMem(uint8_t val)
 }
 
 
-uint8_t cpu::readStatus()
+uint8_t CPU::readStatus()
 {
 	uint8_t status = C | (Z << 1) | (I << 2) | (D << 3) |
 					 (B << 4) | (V << 6) | (N << 7);
 	return status;
 }
 
-void cpu::executeInstruction()
+void CPU::executeInstruction()
 {
 	switch(opcode)
 	{
@@ -213,19 +213,19 @@ void cpu::executeInstruction()
 		//BCC
 		case 0x90:
 			if(C == 0)
-				PC += memory[PC + 1];
+				PC += memory.mem[PC + 1];
 			break;
 
 		//BCS
 		case 0xB0:
 			if(C != 0)
-				PC += memory[PC + 1];
+				PC += memory.mem[PC + 1];
 			break;
 
 		//BEQ
 		case 0xF0:
 			if(Z != 0)
-				PC += memory[PC + 1];
+				PC += memory.mem[PC + 1];
 			break;
 
 		//BIT
@@ -239,19 +239,19 @@ void cpu::executeInstruction()
 		//BMI
 		case 0x30:
 			if(N != 0)
-				PC += memory[PC + 1];
+				PC += memory.mem[PC + 1];
 			break;
 
 		//BNE
 		case 0xD0:
 			if(Z == 0)
-				PC += memory[PC + 1];
+				PC += memory.mem[PC + 1];
 			break;
 
 		//BPL
 		case 0x10:
 			if(N == 0)
-				PC += memory[PC + 1];
+				PC += memory.mem[PC + 1];
 			break;
 
 		//BRK

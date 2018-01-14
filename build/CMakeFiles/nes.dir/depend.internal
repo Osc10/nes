@@ -3,8 +3,16 @@
 
 CMakeFiles/nes.dir/nes/src/cpu.cpp.o
  ../nes/inc/cpu.h
+ ../nes/inc/memory.h
  /home/oscar/github/nes/nes/src/cpu.cpp
 CMakeFiles/nes.dir/nes/src/ines.cpp.o
+ ../nes/inc/ines.h
+ ../nes/inc/memory.h
  /home/oscar/github/nes/nes/src/ines.cpp
 CMakeFiles/nes.dir/nes/src/main.cpp.o
+ ../nes/inc/ines.h
+ ../nes/inc/memory.h
  /home/oscar/github/nes/nes/src/main.cpp
+CMakeFiles/nes.dir/nes/src/memory.cpp.o
+ ../nes/inc/memory.h
+ /home/oscar/github/nes/nes/src/memory.cpp

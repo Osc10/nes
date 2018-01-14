@@ -7,11 +7,13 @@ set(NES_INC "${SRC_ROOT}/inc/")
 set(NES_SRC
    	"${SRC_ROOT}/src/cpu.cpp"
 	"${SRC_ROOT}/src/ines.cpp"
+	"${SRC_ROOT}/src/memory.cpp"
 	"${SRC_ROOT}/src/main.cpp"
 )
 
 set(NES_COMPILE_FLAGS
 	-std=c++11
+	-g
 	-pedantic
 	-Wall
 	-Wextra

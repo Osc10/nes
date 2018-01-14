@@ -204,6 +204,33 @@ nes/src/main.cpp.s:
 	$(MAKE) -f CMakeFiles/nes.dir/build.make CMakeFiles/nes.dir/nes/src/main.cpp.s
 .PHONY : nes/src/main.cpp.s
 
+nes/src/memory.o: nes/src/memory.cpp.o
+
+.PHONY : nes/src/memory.o
+
+# target to build an object file
+nes/src/memory.cpp.o:
+	$(MAKE) -f CMakeFiles/nes.dir/build.make CMakeFiles/nes.dir/nes/src/memory.cpp.o
+.PHONY : nes/src/memory.cpp.o
+
+nes/src/memory.i: nes/src/memory.cpp.i
+
+.PHONY : nes/src/memory.i
+
+# target to preprocess a source file
+nes/src/memory.cpp.i:
+	$(MAKE) -f CMakeFiles/nes.dir/build.make CMakeFiles/nes.dir/nes/src/memory.cpp.i
+.PHONY : nes/src/memory.cpp.i
+
+nes/src/memory.s: nes/src/memory.cpp.s
+
+.PHONY : nes/src/memory.s
+
+# target to generate assembly for a file
+nes/src/memory.cpp.s:
+	$(MAKE) -f CMakeFiles/nes.dir/build.make CMakeFiles/nes.dir/nes/src/memory.cpp.s
+.PHONY : nes/src/memory.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -222,6 +249,9 @@ help:
 	@echo "... nes/src/main.o"
 	@echo "... nes/src/main.i"
 	@echo "... nes/src/main.s"
+	@echo "... nes/src/memory.o"
+	@echo "... nes/src/memory.i"
+	@echo "... nes/src/memory.s"
 .PHONY : help
 
 
