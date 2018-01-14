@@ -1,58 +1,21 @@
 #include <cpu.h>
 
-std::string instructionName[256] = {
-
-	"BRK", "ORA", "STP", "SLO", "NOP", "ORA", "ASL", "SLO",
-	"PHP", "ORA", "ASL", "ANC", "NOP", "ORA", "ASL", "SLO",
-	"BPL", "ORA", "STP", "SLO", "NOP", "ORA", "ASL", "SLO",
-	"CLC", "ORA", "NOP", "SLO", "NOP", "ORA", "ASL", "SLO",
-	"JSR", "AND", "STP", "RLA", "BIT", "AND", "ROL", "RLA",
-	"PLP", "AND", "ROL", "ANC", "BIT", "AND", "ROL", "RLA",
-	"BMI", "AND", "STP", "RLA", "NOP", "AND", "ROL", "RLA",
-	"SEC", "AND", "NOP", "RLA", "NOP", "AND", "ROL", "RLA",
-	"RTI", "EOR", "STP", "SRE", "NOP", "EOR", "LSR", "SRE",
-	"PHA", "EOR", "LSR", "ALR", "JMP", "EOR", "LSR", "SRE",
-	"BVC", "EOR", "STP", "SRE", "NOP", "EOR", "LSR", "SRE",
-	"CLI", "EOR", "NOP", "SRE", "NOP", "EOR", "LSR", "SRE",
-	"RTS", "ADC", "STP", "RRA", "NOP", "ADC", "ROR", "RRA",
-	"PLA", "ADC", "ROR", "ARR", "JMP", "ADC", "ROR", "RRA",
-	"BVS", "ADC", "STP", "RRA", "NOP", "ADC", "ROR", "RRA",
-	"SEI", "ADC", "NOP", "RRA", "NOP", "ADC", "ROR", "RRA",
-	"NOP", "STA", "NOP", "SAX", "STY", "STA", "STX", "SAX",
-	"DEY", "NOP", "TXA", "XAA", "STY", "STA", "STX", "SAX",
-	"BCC", "STA", "STP", "AHX", "STY", "STA", "STX", "SAX",
-	"TYA", "STA", "TXS", "TAS", "SHY", "STA", "SHX", "AHX",
-	"LDY", "LDA", "LDX", "LAX", "LDY", "LDA", "LDX", "LAX",
-	"TAY", "LDA", "TAX", "LAX", "LDY", "LDA", "LDX", "LAX",
-	"BCS", "LDA", "STP", "LAX", "LDY", "LDA", "LDX", "LAX",
-	"CLV", "LDA", "TSX", "LAS", "LDY", "LDA", "LDX", "LAX",
-	"CPY", "CMP", "NOP", "DCP", "CPY", "CMP", "DEC", "DCP",
-	"INY", "CMP", "DEX", "AXS", "CPY", "CMP", "DEC", "DCP",
-	"BNE", "CMP", "STP", "DCP", "NOP", "CMP", "DEC", "DCP",
-	"CLD", "CMP", "NOP", "DCP", "NOP", "CMP", "DEC", "DCP",
-	"CPX", "SBC", "NOP", "ISC", "CPX", "SBC", "INC", "ISC",
-	"INX", "SBC", "NOP", "SBC", "CPX", "SBC", "INC", "ISC",
-	"BEQ", "SBC", "STP", "ISC", "NOP", "SBC", "INC", "ISC",
-	"SED", "SBC", "NOP", "ISC", "NOP", "SBC", "INC", "ISC",
-
-}
-
 enum addressingMode
 {
-	absolute;
-	absoluteX;
-	absoluteY;
-	accumulator;
-	immediate;
-	implied;
-	indexedIndirect;
-	indirect;
-	indirectIndexed;
-	relative;
-	zeroPage;
-	zeroPageX;
-	zeroPageY;
-}
+	absolute,
+	absoluteX,
+	absoluteY,
+	accumulator,
+	immediate,
+	implied,
+	indexedIndirect,
+	indirect,
+	indirectIndexed,
+	relative,
+	zeroPage,
+	zeroPageX,
+	zeroPageY
+};
 
 uint8_t instructionMode[256] = {
 
@@ -73,7 +36,7 @@ uint8_t instructionMode[256] = {
 	4, 6, 4, 6, 10, 10, 10, 10, 5, 4, 5, 4, 0, 0, 0, 0,
 	9, 8, 5, 8, 11, 11, 11, 11, 5, 2, 5, 2, 1, 1, 1, 1,
 
-}
+};
 
 uint8_t instructionSize[256] = {
 
@@ -94,78 +57,206 @@ uint8_t instructionSize[256] = {
 	2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
 	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
 
+};
+
+#define read16(address) ((address)[0] | ((address)[1] << 8))
+
+inline void cpu::setZN(uint8_t val)
+{
+	Z = (val == 0) ? 1 : 0;
+	N = (val & 0x80) ? 1 : 0;
 }
 
-#define read16(address) (address[0] | (address[1] << 8))
-
-void cpu::readOpcode()
+inline void cpu::readOpcode()
 {
-	cpu.opcode = memory[PC];	
+	opcode = memory[PC];	
 }
 
 uint8_t cpu::readMem()
 {
-	switch(instructionMode[cpu.opcode])
+	switch(instructionMode[opcode])
 	{
+		uint16_t offset, addr;
 		case accumulator:
-			return cpu.A;
+			return A;
 		case immediate:
-			return cpu.memory[PC + 1];
+			return memory[PC + 1];
 		case zeroPage:
-			return cpu.memory[cpu.memory[PC + 1]];
+			return memory[memory[PC + 1]];
 		case zeroPageX:
-			uint16_t offset = (cpu.X + memory[PC + 1]) && 0xFF;
-			return cpu.memory[offset];
+			offset = (X + memory[PC + 1]) && 0xFF;
+			return memory[offset];
 		case absolute:
-			return cpu.memory[read16(cpu.memory + PC + 1)];
+			return memory[read16(memory + PC + 1)];
 		case absoluteX:
-			return cpu.memory[read16(cpu.memory + PC + 1) + cpu.X];
+			return memory[read16(memory + PC + 1) + X];
 		case absoluteY:
-			return cpu.memory[read16(cpu.memory + PC + 1) + cpu.Y];
+			return memory[read16(memory + PC + 1) + Y];
 		case indirectIndexed:
-			uint16_t addr = read16(cpu.memory + cpu.memory[PC + 1]) + cpu.Y;
-			return cpu.memory[addr];
+			addr = read16(memory + memory[PC + 1]) + Y;
+			return memory[addr];
 		case indexedIndirect:
-			uint16_t offset = (cpu.X + memory[PC + 1]) && 0xFF;
-			return cpu.memory[read16(cpu.memory + offset)];
+			offset = (X + memory[PC + 1]) && 0xFF;
+			return memory[read16(memory + offset)];
+		default:
+			std::cerr << "Invalid opcode: " << opcode << "\n";
+			return 1;
+	}
+}
+
+void cpu::writeMem(uint8_t val)
+{
+	switch(instructionMode[opcode])
+	{
+		uint16_t offset, addr;
+		case accumulator:
+			A = val;
+			break;
+		case immediate:
+			memory[PC + 1] = val;
+			break;
+		case zeroPage:
+			memory[memory[PC + 1]] = val;
+			break;
+		case zeroPageX:
+			offset = (X + memory[PC + 1]) && 0xFF;
+			memory[offset] = val;
+			break;
+		case absolute:
+			memory[read16(memory + PC + 1)] = val;
+			break;
+		case absoluteX:
+			memory[read16(memory + PC + 1) + X] = val;
+			break;
+		case absoluteY:
+			memory[read16(memory + PC + 1) + Y] = val;
+			break;
+		case indirectIndexed:
+			addr = read16(memory + memory[PC + 1]) + Y;
+			memory[addr] = val;
+			break;
+		case indexedIndirect:
+			offset = (X + memory[PC + 1]) && 0xFF;
+			memory[read16(memory + offset)] = val;
+			break;
 		default:
 			break;
 	}
 }
 
-void cpu::setZN()
+
+uint8_t cpu::readStatus()
 {
-	cpu.Z = (cpu.A == 0) ? 1 : 0;
-	cpu.N = (cpu.A & 0x80) ? 1 : 0;
+	uint8_t status = C | (Z << 1) | (I << 2) | (D << 3) |
+					 (B << 4) | (V << 6) | (N << 7);
+	return status;
+}
 
 void cpu::executeInstruction()
 {
-	switch(instructionName[cpu.opcode])
+	switch(opcode)
 	{
-		case "ADC":
-			uint8_t a = cpu.A;
-			uint8_t b = cpu.readMem();
-			uint8_t c = cpu.C;
+		uint8_t a, b, c;
+		uint16_t sum;
 
-			uint16_t sum = a + b + c;
+		//ADC
+		case 0x69:
+		case 0x65:
+		case 0x75:
+		case 0x6D:
+		case 0x7D:
+		case 0x79:
+		case 0x61:
+		case 0x71:
+			a = A;
+			b = readMem();
+			c = C;
 
-			cpu.A = sum & 0xFF;
-			cpu.C = (sum >> 8) ? 1 : 0;
-			cpu.setZN();
-			if(((a^cpu.N) & 0x80 ) && ((a^b) & 0x80 == 0)) // a, b positive but sum negative or
-				cpu.V = 1;								   // a, b negative but sum positive
+			sum = a + b + c;
+
+			A = sum & 0xFF;
+			C = (sum >> 8) ? 1 : 0;
+			setZN(A);
+			if(((a^N) & 0x80 ) && (((a^b) & 0x80) == 0)) // a, b positive but sum negative or
+				V = 1;								   // a, b negative but sum positive
 			else
-				cpu.V = 0;
+				V = 0;
 
 			break;
 		
-		case "AND":
-			cpu.A &= cpu.readMem();
-			cpu.setZN();
+		//AND
+		case 0x29:
+		case 0x25:
+		case 0x35:
+		case 0x2D:
+		case 0x3D:
+		case 0x39:
+		case 0x21:
+		case 0x31:
+			A &= readMem();
+			setZN(A);
 			break;
 
-		case "ASL":
+		//ASL
+		case 0x0A:
+		case 0x06:
+		case 0x16:
+		case 0x0E:
+		case 0x1E:
+			a = readMem();
+			C = a & 0x80;
+			a = a << 1;
+			writeMem(a);
+			setZN(a);
+			break;
+		
+		//BCC
+		case 0x90:
+			if(C == 0)
+				PC += memory[PC + 1];
+			break;
 
+		//BCS
+		case 0xB0:
+			if(C != 0)
+				PC += memory[PC + 1];
+			break;
 
-		PC += instructionSize[cpu.opcode];
-	
+		//BEQ
+		case 0xF0:
+			if(Z != 0)
+				PC += memory[PC + 1];
+			break;
+
+		//BIT
+		case 0x24:
+		case 0x2C:
+			a = A & readMem();
+			setZN(a);
+			V = a & 0x40;
+			break;
+		
+		//BMI
+		case 0x30:
+			if(N != 0)
+				PC += memory[PC + 1];
+			break;
+
+		//BNE
+		case 0xD0:
+			if(Z == 0)
+				PC += memory[PC + 1];
+			break;
+
+		//BPL
+		case 0x10:
+			if(N == 0)
+				PC += memory[PC + 1];
+			break;
+
+		//BRK
+		case 0x00:
+			B = 1;
+
+	}
+}

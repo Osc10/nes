@@ -1,5 +1,5 @@
 *.nes
 .ycm_extra_conf.py
 build/CMakeCache.txt
-build/.color_coded
+.color_coded
 build/Makefile

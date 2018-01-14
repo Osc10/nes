@@ -4,3 +4,7 @@
 CMakeFiles/nes.dir/nes/src/cpu.cpp.o: ../nes/inc/cpu.h
 CMakeFiles/nes.dir/nes/src/cpu.cpp.o: ../nes/src/cpu.cpp
 
+CMakeFiles/nes.dir/nes/src/ines.cpp.o: ../nes/src/ines.cpp
+
+CMakeFiles/nes.dir/nes/src/main.cpp.o: ../nes/src/main.cpp
+

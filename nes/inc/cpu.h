@@ -1,5 +1,5 @@
 #include <cstdint>
-#include <string>
+#include <iostream>
 
 class cpu // Implementation of the 2A03 processor
 {
@@ -15,13 +15,16 @@ class cpu // Implementation of the 2A03 processor
 	uint8_t S; // Stack Pointer
 	uint16_t PC; // Program Counter
 
-	uint8_t memory[65535]; // $0100 - $01FF Stack
-						   // 
-						   //
-	
+	uint8_t memory[65535]; 
+
 	uint8_t opcode;
+
+	uint8_t readMem();
+	void writeMem(uint8_t val);
+	void setZN(uint8_t val);
+	uint8_t readStatus();
 
 	void readOpcode();
 	void executeInstruction();
-}
+};
 

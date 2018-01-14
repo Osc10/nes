@@ -4,9 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/oscar/github/nes/nes/src/cpu.cpp" "/home/oscar/github/nes/build/CMakeFiles/nes.dir/nes/src/cpu.cpp.o"
-  "/home/oscar/github/nes/nes/src/ines.cpp" "/home/oscar/github/nes/build/CMakeFiles/nes.dir/nes/src/ines.cpp.o"
-  "/home/oscar/github/nes/nes/src/main.cpp" "/home/oscar/github/nes/build/CMakeFiles/nes.dir/nes/src/main.cpp.o"
+  "/home/oscar/github/nes/nes/src/cpu.cpp" "/home/oscar/github/nes/build/CMakeFiles/cpu.dir/nes/src/cpu.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

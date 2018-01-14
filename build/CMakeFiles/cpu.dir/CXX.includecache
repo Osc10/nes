@@ -9,14 +9,10 @@
 ../nes/inc/cpu.h
 cstdint
 -
-iostream
+string
 -
 
 /home/oscar/github/nes/nes/src/cpu.cpp
 cpu.h
 -
-
-/home/oscar/github/nes/nes/src/ines.cpp
-
-/home/oscar/github/nes/nes/src/main.cpp
 

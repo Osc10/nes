@@ -150,6 +150,60 @@ nes/src/cpu.cpp.s:
 	$(MAKE) -f CMakeFiles/nes.dir/build.make CMakeFiles/nes.dir/nes/src/cpu.cpp.s
 .PHONY : nes/src/cpu.cpp.s
 
+nes/src/ines.o: nes/src/ines.cpp.o
+
+.PHONY : nes/src/ines.o
+
+# target to build an object file
+nes/src/ines.cpp.o:
+	$(MAKE) -f CMakeFiles/nes.dir/build.make CMakeFiles/nes.dir/nes/src/ines.cpp.o
+.PHONY : nes/src/ines.cpp.o
+
+nes/src/ines.i: nes/src/ines.cpp.i
+
+.PHONY : nes/src/ines.i
+
+# target to preprocess a source file
+nes/src/ines.cpp.i:
+	$(MAKE) -f CMakeFiles/nes.dir/build.make CMakeFiles/nes.dir/nes/src/ines.cpp.i
+.PHONY : nes/src/ines.cpp.i
+
+nes/src/ines.s: nes/src/ines.cpp.s
+
+.PHONY : nes/src/ines.s
+
+# target to generate assembly for a file
+nes/src/ines.cpp.s:
+	$(MAKE) -f CMakeFiles/nes.dir/build.make CMakeFiles/nes.dir/nes/src/ines.cpp.s
+.PHONY : nes/src/ines.cpp.s
+
+nes/src/main.o: nes/src/main.cpp.o
+
+.PHONY : nes/src/main.o
+
+# target to build an object file
+nes/src/main.cpp.o:
+	$(MAKE) -f CMakeFiles/nes.dir/build.make CMakeFiles/nes.dir/nes/src/main.cpp.o
+.PHONY : nes/src/main.cpp.o
+
+nes/src/main.i: nes/src/main.cpp.i
+
+.PHONY : nes/src/main.i
+
+# target to preprocess a source file
+nes/src/main.cpp.i:
+	$(MAKE) -f CMakeFiles/nes.dir/build.make CMakeFiles/nes.dir/nes/src/main.cpp.i
+.PHONY : nes/src/main.cpp.i
+
+nes/src/main.s: nes/src/main.cpp.s
+
+.PHONY : nes/src/main.s
+
+# target to generate assembly for a file
+nes/src/main.cpp.s:
+	$(MAKE) -f CMakeFiles/nes.dir/build.make CMakeFiles/nes.dir/nes/src/main.cpp.s
+.PHONY : nes/src/main.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -162,6 +216,12 @@ help:
 	@echo "... nes/src/cpu.o"
 	@echo "... nes/src/cpu.i"
 	@echo "... nes/src/cpu.s"
+	@echo "... nes/src/ines.o"
+	@echo "... nes/src/ines.i"
+	@echo "... nes/src/ines.s"
+	@echo "... nes/src/main.o"
+	@echo "... nes/src/main.i"
+	@echo "... nes/src/main.s"
 .PHONY : help
 
 
