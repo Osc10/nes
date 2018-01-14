@@ -1,9 +1,10 @@
+#ifndef INES_H
+#define INES_H
+
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <memory.h>
-
-using namespace std;
+#include "memory.h"
 
 class ines
 {
@@ -20,4 +21,4 @@ private:
 	void loadPrgRom();
 };
 
-
+#endif

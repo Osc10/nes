@@ -1,8 +1,15 @@
+#ifndef MEMORY_H
+#define MEMORY_H
+
 #include <iostream>
-#include <memory.h>
+#include "memory.h"
 
 class CPU // Implementation of the 2A03 processor
 {
+public:
+	CPU(Memory *mem) : memory(mem) {}
+	void run();
+private:
 	uint8_t A; // Accumulator
 	uint8_t X, Y; // Index Registers
 
@@ -18,7 +25,7 @@ class CPU // Implementation of the 2A03 processor
 
 	uint8_t opcode;
 
-	Memory memory;
+	Memory *memory;
 
 	uint8_t readMem();
 	void writeMem(uint8_t val);
@@ -27,5 +34,7 @@ class CPU // Implementation of the 2A03 processor
 
 	void readOpcode();
 	void executeInstruction();
-};
 
+	void initialize();
+};
+#endif

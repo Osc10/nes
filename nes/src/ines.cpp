@@ -1,4 +1,4 @@
-#include <ines.h>
+#include "ines.h"
 
 
 void ines::load(string path, Memory *mem)
@@ -12,6 +12,8 @@ void ines::load(string path, Memory *mem)
 
 	loadHeader();
 	loadPrgRom();
+
+	memory->isLoaded = true;
 
 	inesFile.close();	
 }

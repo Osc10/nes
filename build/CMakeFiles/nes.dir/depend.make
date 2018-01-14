@@ -9,6 +9,7 @@ CMakeFiles/nes.dir/nes/src/ines.cpp.o: ../nes/inc/ines.h
 CMakeFiles/nes.dir/nes/src/ines.cpp.o: ../nes/inc/memory.h
 CMakeFiles/nes.dir/nes/src/ines.cpp.o: ../nes/src/ines.cpp
 
+CMakeFiles/nes.dir/nes/src/main.cpp.o: ../nes/inc/cpu.h
 CMakeFiles/nes.dir/nes/src/main.cpp.o: ../nes/inc/ines.h
 CMakeFiles/nes.dir/nes/src/main.cpp.o: ../nes/inc/memory.h
 CMakeFiles/nes.dir/nes/src/main.cpp.o: ../nes/src/main.cpp

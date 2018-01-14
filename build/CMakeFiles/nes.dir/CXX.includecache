@@ -10,7 +10,7 @@
 iostream
 -
 memory.h
--
+../nes/inc/memory.h
 
 ../nes/inc/ines.h
 fstream
@@ -20,7 +20,7 @@ iostream
 string
 -
 memory.h
--
+../nes/inc/memory.h
 
 ../nes/inc/memory.h
 cstdint
@@ -28,17 +28,23 @@ cstdint
 
 /home/oscar/github/nes/nes/src/cpu.cpp
 cpu.h
+/home/oscar/github/nes/nes/src/cpu.h
+iomanip
 -
 
 /home/oscar/github/nes/nes/src/ines.cpp
 ines.h
--
+/home/oscar/github/nes/nes/src/ines.h
 
 /home/oscar/github/nes/nes/src/main.cpp
 ines.h
--
+/home/oscar/github/nes/nes/src/ines.h
+memory.h
+/home/oscar/github/nes/nes/src/memory.h
+cpu.h
+/home/oscar/github/nes/nes/src/cpu.h
 
 /home/oscar/github/nes/nes/src/memory.cpp
 memory.h
--
+/home/oscar/github/nes/nes/src/memory.h
 

@@ -1,4 +1,4 @@
-#include <cpu.h>
+#include "cpu.h"
 
 enum addressingMode
 {
@@ -69,7 +69,7 @@ inline void CPU::setZN(uint8_t val)
 
 inline void CPU::readOpcode()
 {
-	opcode = memory.mem[PC];	
+	opcode = memory->mem[PC];	
 }
 
 uint8_t CPU::readMem()
@@ -80,26 +80,26 @@ uint8_t CPU::readMem()
 		case accumulator:
 			return A;
 		case immediate:
-			return memory.mem[PC + 1];
+			return memory->mem[PC + 1];
 		case zeroPage:
-			return memory.mem[memory.mem[PC + 1]];
+			return memory->mem[memory->mem[PC + 1]];
 		case zeroPageX:
-			offset = (X + memory.mem[PC + 1]) && 0xFF;
-			return memory.mem[offset];
+			offset = (X + memory->mem[PC + 1]) && 0xFF;
+			return memory->mem[offset];
 		case absolute:
-			return memory.mem[read16(memory.mem + PC + 1)];
+			return memory->mem[read16(memory->mem + PC + 1)];
 		case absoluteX:
-			return memory.mem[read16(memory.mem + PC + 1) + X];
+			return memory->mem[read16(memory->mem + PC + 1) + X];
 		case absoluteY:
-			return memory.mem[read16(memory.mem + PC + 1) + Y];
+			return memory->mem[read16(memory->mem + PC + 1) + Y];
 		case indirectIndexed:
-			addr = read16(memory.mem + memory.mem[PC + 1]) + Y;
-			return memory.mem[addr];
+			addr = read16(memory->mem + memory->mem[PC + 1]) + Y;
+			return memory->mem[addr];
 		case indexedIndirect:
-			offset = (X + memory.mem[PC + 1]) && 0xFF;
-			return memory.mem[read16(memory.mem + offset)];
+			offset = (X + memory->mem[PC + 1]) && 0xFF;
+			return memory->mem[read16(memory->mem + offset)];
 		default:
-			std::cerr << "Invalid opcode: " << opcode << "\n";
+			cerr << "Invalid opcode: " << opcode << "\n";
 			return 1;
 	}
 }
@@ -113,31 +113,31 @@ void CPU::writeMem(uint8_t val)
 			A = val;
 			break;
 		case immediate:
-			memory.mem[PC + 1] = val;
+			memory->mem[PC + 1] = val;
 			break;
 		case zeroPage:
-			memory.mem[memory.mem[PC + 1]] = val;
+			memory->mem[memory->mem[PC + 1]] = val;
 			break;
 		case zeroPageX:
-			offset = (X + memory.mem[PC + 1]) && 0xFF;
-			memory.mem[offset] = val;
+			offset = (X + memory->mem[PC + 1]) && 0xFF;
+			memory->mem[offset] = val;
 			break;
 		case absolute:
-			memory.mem[read16(memory.mem + PC + 1)] = val;
+			memory->mem[read16(memory->mem + PC + 1)] = val;
 			break;
 		case absoluteX:
-			memory.mem[read16(memory.mem + PC + 1) + X] = val;
+			memory->mem[read16(memory->mem + PC + 1) + X] = val;
 			break;
 		case absoluteY:
-			memory.mem[read16(memory.mem + PC + 1) + Y] = val;
+			memory->mem[read16(memory->mem + PC + 1) + Y] = val;
 			break;
 		case indirectIndexed:
-			addr = read16(memory.mem + memory.mem[PC + 1]) + Y;
-			memory.mem[addr] = val;
+			addr = read16(memory->mem + memory->mem[PC + 1]) + Y;
+			memory->mem[addr] = val;
 			break;
 		case indexedIndirect:
-			offset = (X + memory.mem[PC + 1]) && 0xFF;
-			memory.mem[read16(memory.mem + offset)] = val;
+			offset = (X + memory->mem[PC + 1]) && 0xFF;
+			memory->mem[read16(memory->mem + offset)] = val;
 			break;
 		default:
 			break;
@@ -213,19 +213,19 @@ void CPU::executeInstruction()
 		//BCC
 		case 0x90:
 			if(C == 0)
-				PC += memory.mem[PC + 1];
+				PC += memory->mem[PC + 1];
 			break;
 
 		//BCS
 		case 0xB0:
 			if(C != 0)
-				PC += memory.mem[PC + 1];
+				PC += memory->mem[PC + 1];
 			break;
 
 		//BEQ
 		case 0xF0:
 			if(Z != 0)
-				PC += memory.mem[PC + 1];
+				PC += memory->mem[PC + 1];
 			break;
 
 		//BIT
@@ -239,19 +239,19 @@ void CPU::executeInstruction()
 		//BMI
 		case 0x30:
 			if(N != 0)
-				PC += memory.mem[PC + 1];
+				PC += memory->mem[PC + 1];
 			break;
 
 		//BNE
 		case 0xD0:
 			if(Z == 0)
-				PC += memory.mem[PC + 1];
+				PC += memory->mem[PC + 1];
 			break;
 
 		//BPL
 		case 0x10:
 			if(N == 0)
-				PC += memory.mem[PC + 1];
+				PC += memory->mem[PC + 1];
 			break;
 
 		//BRK
@@ -259,4 +259,18 @@ void CPU::executeInstruction()
 			B = 1;
 
 	}
+}
+#include <iomanip>
+void CPU::initialize()
+{
+	if(!memory->isLoaded)
+		cerr << "CPU running while memory has not been initialized!\n";
+
+	PC = read16(&memory->mem[0xFFFC]);
+	cout << hex << PC << dec << endl;
+}
+
+void CPU::run()
+{
+	initialize();
 }
