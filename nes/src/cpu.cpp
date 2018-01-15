@@ -67,9 +67,57 @@ inline void CPU::setZN(uint8_t val)
 	N = (val & 0x80) ? 1 : 0;
 }
 
+inline void CPU::setFlags(uint8_t val)
+{
+	C = val & 0x1;
+	Z = (val >> 1) & 0x1;
+	I = (val >> 2) & 0x1;
+	D = (val >> 3) & 0x1;
+	B = (val >> 4) & 0x1;
+	V = (val >> 6) & 0x1;
+	N = (val >> 7) & 0x1;
+}
+
+inline uint8_t CPU::readFlags()
+{
+	return (N << 7) | (V << 6) | (B << 4) | (D << 3) | (I << 2) | (Z << 1) | C;
+}
+
 inline void CPU::readOpcode()
 {
 	opcode = memory->mem[PC];	
+}
+
+inline void CPU::pushToStack(uint8_t val)
+{
+	memory->mem[0x0100 + S] = val;	
+	--S;
+}
+
+inline void CPU::pushToStack16(uint16_t val)
+{
+	pushToStack((uint8_t)(val >> 8));
+	pushToStack((uint8_t)(val & 0xFF));
+}
+
+inline uint8_t CPU::pullFromStack()
+{
+	++S;
+	return memory->mem[0x0100 + S];
+}
+
+inline uint16_t CPU::pullFromStack16()
+{
+	uint16_t low = (uint16_t)pullFromStack();
+	uint16_t high = (uint16_t)pullFromStack();
+	return low | (high << 8);
+}
+
+inline uint8_t CPU::readStatus()
+{
+	uint8_t status = C | (Z << 1) | (I << 2) | (D << 3) |
+					 (B << 4) | (V << 6) | (N << 7);
+	return status;
 }
 
 uint8_t CPU::readMem()
@@ -144,16 +192,11 @@ void CPU::writeMem(uint8_t val)
 	}
 }
 
-
-uint8_t CPU::readStatus()
-{
-	uint8_t status = C | (Z << 1) | (I << 2) | (D << 3) |
-					 (B << 4) | (V << 6) | (N << 7);
-	return status;
-}
-
+#include <iomanip>
 void CPU::executeInstruction()
 {
+	readOpcode();
+	cout << hex << (int)opcode << dec << endl; //To Delete
 	switch(opcode)
 	{
 		uint8_t a, b, c;
@@ -175,10 +218,10 @@ void CPU::executeInstruction()
 			sum = a + b + c;
 
 			A = sum & 0xFF;
-			C = (sum >> 8) ? 1 : 0;
+			C = ((sum >> 8) == 0) ? 0 : 1;
 			setZN(A);
-			if(((a^N) & 0x80 ) && (((a^b) & 0x80) == 0)) // a, b positive but sum negative or
-				V = 1;								   // a, b negative but sum positive
+			if((((a^A) & 0x80 ) != 0) && (((a^b) & 0x80) == 0)) // a, b same sign but sum has opposite sign
+				V = 1;
 			else
 				V = 0;
 
@@ -204,7 +247,7 @@ void CPU::executeInstruction()
 		case 0x0E:
 		case 0x1E:
 			a = readMem();
-			C = a & 0x80;
+			C = (a & 0x80) >> 7;
 			a = a << 1;
 			writeMem(a);
 			setZN(a);
@@ -231,9 +274,10 @@ void CPU::executeInstruction()
 		//BIT
 		case 0x24:
 		case 0x2C:
-			a = A & readMem();
-			setZN(a);
-			V = a & 0x40;
+			b = readMem();
+			Z = ((b & A) == 0) ? 1 : 0;
+			V = (b & 0x40) >> 6;
+			N = (b & 0x80) >> 7;
 			break;
 		
 		//BMI
@@ -253,24 +297,145 @@ void CPU::executeInstruction()
 			if(N == 0)
 				PC += memory->mem[PC + 1];
 			break;
-
+		
 		//BRK
 		case 0x00:
+			pushToStack16(PC);
+			pushToStack(readFlags());
 			B = 1;
+			PC = read16(&memory->mem[0xFFFE]);
+			break;
+
+		//CLD
+		case 0xD8:
+			D = 0;
+			break;
+
+		//CMP
+		case 0xC9:
+		case 0xC5:
+		case 0xD5:
+		case 0xCD:
+		case 0xDD:
+		case 0xD9:
+		case 0xC1:
+		case 0xD1:
+			b = readMem();
+			C = (A >= b) ? 1 : 0;
+			setZN(A - b);
+			break;
+
+		//EOR
+		case 0x49:
+		case 0x45:
+		case 0x55:
+		case 0x4D:
+		case 0x5D:
+		case 0x59:
+		case 0x41:
+		case 0x51:
+			b = readMem();
+			A = A ^ b;
+			setZN(A);
+			break;
+
+		//JSR
+		case 0x20:
+			pushToStack16(PC - 1);
+			PC = read16(&memory->mem[PC + 1]);
+			break;
+
+		//LDA
+		case 0xA9:
+		case 0xA5:
+		case 0xB5:
+		case 0xAD:
+		case 0xBD:
+		case 0xB9:
+		case 0xA1:
+		case 0xB1:
+			A = readMem();
+			setZN(A);
+			break;
+
+		//LDX
+		case 0xA2:
+		case 0xA6:
+		case 0xB6:
+		case 0xAE:
+		case 0xBE:
+			X = readMem();
+			setZN(X);
+			break;
+
+		//PLA
+		case 0x68:
+			A = pullFromStack();
+			setZN(A);
+			break;	
+
+		//RTI
+		case 0x40:
+			setFlags(pullFromStack());
+			PC = pullFromStack16();
+			break;
+
+		//RTS
+		case 0x60:
+			PC = pullFromStack16() + 1;
+			break;
+
+		//SEI
+		case 0x78:
+			I = 1;			
+			break;
+
+		//STA
+		case 0x85:
+		case 0x95:
+		case 0x8D:
+		case 0x9D:
+		case 0x99:
+		case 0x81:
+		case 0x91:
+			writeMem(A);
+			break;
+
+		//STX
+		case 0x86:
+		case 0x96:
+		case 0x8E:
+			writeMem(X);
+			break;
+
+		//TXS
+		case 0x9A:
+			S = X;
+			break;
+
+		default:
+			cerr << "Attempted to execute invalid opcode! \n";
+			exit(0); // Remove
 
 	}
+
+	PC += instructionSize[opcode];
 }
-#include <iomanip>
+
 void CPU::initialize()
 {
 	if(!memory->isLoaded)
 		cerr << "CPU running while memory has not been initialized!\n";
 
 	PC = read16(&memory->mem[0xFFFC]);
-	cout << hex << PC << dec << endl;
 }
 
 void CPU::run()
 {
 	initialize();
+
+	while(true)
+	{
+		executeInstruction();
+	}
 }

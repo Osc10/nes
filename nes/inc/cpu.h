@@ -1,5 +1,5 @@
-#ifndef MEMORY_H
-#define MEMORY_H
+#ifndef CPU_H
+#define CPU_H
 
 #include <iostream>
 #include "memory.h"
@@ -30,7 +30,13 @@ private:
 	uint8_t readMem();
 	void writeMem(uint8_t val);
 	void setZN(uint8_t val);
+	void setFlags(uint8_t val);
+	uint8_t readFlags();
 	uint8_t readStatus();
+	void pushToStack(uint8_t val);
+	void pushToStack16(uint16_t val);
+	uint8_t pullFromStack();
+	uint16_t pullFromStack16();
 
 	void readOpcode();
 	void executeInstruction();

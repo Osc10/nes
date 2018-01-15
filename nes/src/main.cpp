@@ -9,4 +9,6 @@ int main()
 
 	ines donkeykong;
 	donkeykong.load("../donkeykong.nes", &mem);
+
+	cpu.run();
 }
