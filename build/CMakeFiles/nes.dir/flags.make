@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_FLAGS =   -std=c++11 -g -pedantic -Wall -Wextra
 
-CXX_DEFINES = 
+CXX_DEFINES = -DNDEBUG
 
 CXX_INCLUDES = -I/home/oscar/github/nes/nes/inc 
 

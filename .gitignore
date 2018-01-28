@@ -3,3 +3,7 @@
 build/CMakeCache.txt
 .color_coded
 build/Makefile
+*.swp
+build/CMakeFiles
+build/CMakeCache.txt
+build/cmake_install.cmake

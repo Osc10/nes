@@ -1,6 +1,5 @@
 #include "ines.h"
 
-
 void ines::load(string path, Memory *mem)
 {
 	inesPath = path;
@@ -36,10 +35,17 @@ void ines::loadPrgRom()
 	{
 		inesFile.read((char*)(&memory->mem[0x8000]), 16384);
 		if(!inesFile)
-			cerr << "Failed to read program ROM!\n";
+		{
+			cerr << "Failed to read program ROM (mirror 1)!\n";
+			cerr << "Only " << inesFile.gcount() << " could be read.\n";
+		}
+		inesFile.seekg(trainerOffset);
 		inesFile.read((char*)(&memory->mem[0xC000]), 16384);
 		if(!inesFile)
-			cerr << "Failed to read program ROM!\n";
+		{
+			cerr << "Failed to read program ROM (mirror 2)!\n";
+			cerr << "Only " << inesFile.gcount() << " could be read.\n";
+		}
 	}
 	else
 	{

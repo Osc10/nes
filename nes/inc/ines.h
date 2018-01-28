@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <bitset>
 #include "memory.h"
 
 class ines

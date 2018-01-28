@@ -7,8 +7,9 @@ int main()
 	Memory mem;
 	CPU cpu(&mem);
 
-	ines donkeykong;
-	donkeykong.load("../donkeykong.nes", &mem);
+	ines rom;
+	//rom.load("../donkeykong.nes", &mem);
+	rom.load("../test.nes", &mem);
 
 	cpu.run();
 }

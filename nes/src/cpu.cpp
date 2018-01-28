@@ -1,5 +1,4 @@
 #include "cpu.h"
-
 enum addressingMode
 {
 	absolute,
@@ -59,7 +58,63 @@ uint8_t instructionSize[256] = {
 
 };
 
+string instructionName[256] = {
+	"BRK", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO",
+	"PHP", "ORA", "ASL", "ANC", "NOP", "ORA", "ASL", "SLO",
+	"BPL", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO",
+	"CLC", "ORA", "NOP", "SLO", "NOP", "ORA", "ASL", "SLO",
+	"JSR", "AND", "KIL", "RLA", "BIT", "AND", "ROL", "RLA",
+	"PLP", "AND", "ROL", "ANC", "BIT", "AND", "ROL", "RLA",
+	"BMI", "AND", "KIL", "RLA", "NOP", "AND", "ROL", "RLA",
+	"SEC", "AND", "NOP", "RLA", "NOP", "AND", "ROL", "RLA",
+	"RTI", "EOR", "KIL", "SRE", "NOP", "EOR", "LSR", "SRE",
+	"PHA", "EOR", "LSR", "ALR", "JMP", "EOR", "LSR", "SRE",
+	"BVC", "EOR", "KIL", "SRE", "NOP", "EOR", "LSR", "SRE",
+	"CLI", "EOR", "NOP", "SRE", "NOP", "EOR", "LSR", "SRE",
+	"RTS", "ADC", "KIL", "RRA", "NOP", "ADC", "ROR", "RRA",
+	"PLA", "ADC", "ROR", "ARR", "JMP", "ADC", "ROR", "RRA",
+	"BVS", "ADC", "KIL", "RRA", "NOP", "ADC", "ROR", "RRA",
+	"SEI", "ADC", "NOP", "RRA", "NOP", "ADC", "ROR", "RRA",
+	"NOP", "STA", "NOP", "SAX", "STY", "STA", "STX", "SAX",
+	"DEY", "NOP", "TXA", "XAA", "STY", "STA", "STX", "SAX",
+	"BCC", "STA", "KIL", "AHX", "STY", "STA", "STX", "SAX",
+	"TYA", "STA", "TXS", "TAS", "SHY", "STA", "SHX", "AHX",
+	"LDY", "LDA", "LDX", "LAX", "LDY", "LDA", "LDX", "LAX",
+	"TAY", "LDA", "TAX", "LAX", "LDY", "LDA", "LDX", "LAX",
+	"BCS", "LDA", "KIL", "LAX", "LDY", "LDA", "LDX", "LAX",
+	"CLV", "LDA", "TSX", "LAS", "LDY", "LDA", "LDX", "LAX",
+	"CPY", "CMP", "NOP", "DCP", "CPY", "CMP", "DEC", "DCP",
+	"INY", "CMP", "DEX", "AXS", "CPY", "CMP", "DEC", "DCP",
+	"BNE", "CMP", "KIL", "DCP", "NOP", "CMP", "DEC", "DCP",
+	"CLD", "CMP", "NOP", "DCP", "NOP", "CMP", "DEC", "DCP",
+	"CPX", "SBC", "NOP", "ISC", "CPX", "SBC", "INC", "ISC",
+	"INX", "SBC", "NOP", "SBC", "CPX", "SBC", "INC", "ISC",
+	"BEQ", "SBC", "KIL", "ISC", "NOP", "SBC", "INC", "ISC",
+	"SED", "SBC", "NOP", "ISC", "NOP", "SBC", "INC", "ISC"
+};
+
 #define read16(address) ((address)[0] | ((address)[1] << 8))
+
+void CPU::printLog(uint8_t opcode)
+{
+	++instructionNumber;
+	cout << dec << setfill(' ') << setw(4) << instructionNumber << ": ";
+	cout << hex << setw(4) << (int)PC << "  "; 
+	for(int i = 0; i < 3; ++i)
+	{
+		cout << setw(2);
+		if(i < instructionSize[opcode])
+			cout << setfill('0') << (int)memory->mem[PC + i] << " ";
+		else
+			cout << "   ";
+	}
+	cout << setfill(' ') << setw(5) << instructionName[opcode];
+	cout << setw(10) << "A:" << setfill('0') << setw(2) << (int)A;
+	cout << setfill(' ') << setw(3) << "X:" << setfill('0') << setw(2) << (int)X;
+	cout << setfill(' ') << setw(3) << "Y:" << setfill('0') << setw(2) << (int)Y;
+	cout << setfill(' ') << setw(4) << "SP:" << setfill('0') << setw(2) << (int)S;
+	cout << endl;
+}
 
 inline void CPU::setZN(uint8_t val)
 {
@@ -80,7 +135,7 @@ inline void CPU::setFlags(uint8_t val)
 
 inline uint8_t CPU::readFlags()
 {
-	return (N << 7) | (V << 6) | (B << 4) | (D << 3) | (I << 2) | (Z << 1) | C;
+	return (N << 7) | (V << 6) | (1 << 5) | (B << 4) | (D << 3) | (I << 2) | (Z << 1) | C;
 }
 
 inline void CPU::readOpcode()
@@ -120,7 +175,7 @@ inline uint8_t CPU::readStatus()
 	return status;
 }
 
-uint8_t CPU::readMem()
+uint16_t CPU::readMem()
 {
 	switch(instructionMode[opcode])
 	{
@@ -135,7 +190,7 @@ uint8_t CPU::readMem()
 			offset = (X + memory->mem[PC + 1]) && 0xFF;
 			return memory->mem[offset];
 		case absolute:
-			return memory->mem[read16(memory->mem + PC + 1)];
+			return read16(&memory->mem[PC + 1]);
 		case absoluteX:
 			return memory->mem[read16(memory->mem + PC + 1) + X];
 		case absoluteY:
@@ -147,7 +202,7 @@ uint8_t CPU::readMem()
 			offset = (X + memory->mem[PC + 1]) && 0xFF;
 			return memory->mem[read16(memory->mem + offset)];
 		default:
-			cerr << "Invalid opcode: " << opcode << "\n";
+			cerr << "Invalid opcode: " << hex << (int)opcode << dec << "\n";
 			return 1;
 	}
 }
@@ -192,11 +247,12 @@ void CPU::writeMem(uint8_t val)
 	}
 }
 
-#include <iomanip>
 void CPU::executeInstruction()
 {
 	readOpcode();
-	cout << hex << (int)opcode << dec << endl; //To Delete
+#ifdef NDEBUG
+	printLog(opcode);
+#endif
 	switch(opcode)
 	{
 		uint8_t a, b, c;
@@ -256,19 +312,19 @@ void CPU::executeInstruction()
 		//BCC
 		case 0x90:
 			if(C == 0)
-				PC += memory->mem[PC + 1];
+				PC += (int8_t)memory->mem[PC + 1];
 			break;
 
 		//BCS
 		case 0xB0:
 			if(C != 0)
-				PC += memory->mem[PC + 1];
+				PC += (int8_t)memory->mem[PC + 1];
 			break;
 
 		//BEQ
 		case 0xF0:
 			if(Z != 0)
-				PC += memory->mem[PC + 1];
+				PC += (int8_t)memory->mem[PC + 1];
 			break;
 
 		//BIT
@@ -283,32 +339,46 @@ void CPU::executeInstruction()
 		//BMI
 		case 0x30:
 			if(N != 0)
-				PC += memory->mem[PC + 1];
+				PC += (int8_t)memory->mem[PC + 1];
 			break;
 
 		//BNE
 		case 0xD0:
 			if(Z == 0)
-				PC += memory->mem[PC + 1];
+				PC += (int8_t)memory->mem[PC + 1];
 			break;
 
 		//BPL
 		case 0x10:
 			if(N == 0)
-				PC += memory->mem[PC + 1];
-			break;
-		
-		//BRK
-		case 0x00:
-			pushToStack16(PC);
-			pushToStack(readFlags());
-			B = 1;
-			PC = read16(&memory->mem[0xFFFE]);
+				PC += (int8_t)memory->mem[PC + 1];
 			break;
 
+		//BVC
+		case 0x50:
+			if(V == 0)
+				PC += (int8_t)memory->mem[PC + 1];
+			break;
+
+		//BVS
+		case 0x70:
+			if(V != 0)
+				PC += (int8_t)memory->mem[PC + 1];
+			break;
+
+		//CLC
+		case 0x18:
+			C = 0;
+			break;
+		
 		//CLD
 		case 0xD8:
 			D = 0;
+			break;
+
+		//CLV
+		case 0xB8:
+			V = 0;
 			break;
 
 		//CMP
@@ -325,6 +395,36 @@ void CPU::executeInstruction()
 			setZN(A - b);
 			break;
 
+		//CPX
+		case 0xE0:
+		case 0xE4:
+		case 0xEC:
+			b = readMem();
+			C = (X >= b) ? 1 : 0;
+			setZN(X - b);
+			break;
+
+		//CPY
+		case 0xC0:
+		case 0xC4:
+		case 0xCC:
+			b = readMem();
+			C = (Y >= b) ? 1 : 0;
+			setZN(Y - b);
+			break;
+
+		//DEX
+		case 0xCA:
+			--X;
+			setZN(X);
+			break;
+			
+		//DEY
+		case 0x88:
+			--Y;
+			setZN(Y);
+			break;
+
 		//EOR
 		case 0x49:
 		case 0x45:
@@ -339,9 +439,29 @@ void CPU::executeInstruction()
 			setZN(A);
 			break;
 
+		//INX
+		case 0xE8:
+			++X;
+			setZN(X);
+			break;
+			
+		//INY
+		case 0xC8:
+			++Y;
+			setZN(Y);
+			break;
+
+		//JMP
+		case 0x4C:
+			PC = readMem();
+			break;
+		case 0x6C:
+			PC = read16(&memory->mem[read16(&memory->mem[PC + 1])]);
+			break;
+
 		//JSR
 		case 0x20:
-			pushToStack16(PC - 1);
+			pushToStack16(PC + 2);
 			PC = read16(&memory->mem[PC + 1]);
 			break;
 
@@ -368,11 +488,53 @@ void CPU::executeInstruction()
 			setZN(X);
 			break;
 
+		//LDY
+		case 0xA0:
+		case 0xA4:
+		case 0xB4:
+		case 0xAC:
+		case 0xBC:
+			Y = readMem();
+			setZN(Y);
+			break;
+
+		//NOP
+		case 0xEA:
+			break;
+
+		//ORA
+		case 0x09:
+		case 0x05:
+		case 0x15:
+		case 0x0D:
+		case 0x1D:
+		case 0x19:
+		case 0x01:
+		case 0x11:
+			A = A | readMem();
+			setZN(A);
+			break;
+
+		//PHA
+		case 0x48:
+			pushToStack(A);
+			break;
+
+		//PHP
+		case 0x08:
+			pushToStack(readFlags() | 0x10);
+			break;
+
 		//PLA
 		case 0x68:
 			A = pullFromStack();
 			setZN(A);
 			break;	
+
+		//PLP
+		case 0x28:
+			setFlags(pullFromStack());
+			break;
 
 		//RTI
 		case 0x40:
@@ -383,6 +545,40 @@ void CPU::executeInstruction()
 		//RTS
 		case 0x60:
 			PC = pullFromStack16() + 1;
+			break;
+
+		//SBC
+		case 0xE9:
+		case 0xE5:
+		case 0xF5:
+		case 0xED:
+		case 0xFD:
+		case 0xF9:
+		case 0xE1:
+		case 0xF1:
+			a = A;
+			b = readMem();
+			c = C;
+
+			A = a - b - (1 - c);
+
+			C = (int(a) >= int(b) + int(1 - c)) ? 1 : 0;
+			setZN(A);
+			if((((a^A) & 0x80 ) != 0) && (((a^b) & 0x80) != 0)) // b, sum same sign but a has opposite sign
+				V = 1;
+			else
+				V = 0;
+
+			break;
+
+		//SEC
+		case 0x38:
+			C = 1;
+			break;
+
+		//SED
+		case 0xF8:
+			D = 1;
 			break;
 
 		//SEI
@@ -408,9 +604,39 @@ void CPU::executeInstruction()
 			writeMem(X);
 			break;
 
+		//TAX
+		case 0xAA:
+			X = A;
+			setZN(X);
+			break;
+
+		//TAY
+		case 0xA8:
+			Y = A;
+			setZN(Y);
+			break;
+
+		//TSX
+		case 0xBA:
+			X = S;
+			setZN(X);
+			break;
+
+		//TXA
+		case 0x8A:
+			A = X;
+			setZN(A);
+			break;
+
 		//TXS
 		case 0x9A:
 			S = X;
+			break;
+
+		//TYA
+		case 0x98:
+			A = Y;
+			setZN(A);
 			break;
 
 		default:
@@ -419,7 +645,21 @@ void CPU::executeInstruction()
 
 	}
 
-	PC += instructionSize[opcode];
+	incrementPC(opcode);
+}
+
+void CPU::incrementPC(uint8_t opcode)
+{
+	switch(opcode)
+	{
+		case 0x4C:
+		case 0x20:
+		case 0x60:
+			break;
+
+		default:
+			PC += instructionSize[opcode];
+	}
 }
 
 void CPU::initialize()
@@ -428,6 +668,8 @@ void CPU::initialize()
 		cerr << "CPU running while memory has not been initialized!\n";
 
 	PC = read16(&memory->mem[0xFFFC]);
+	PC = 0xC000; // Automating nestest
+	S = 0xFD; // Automating nestest
 }
 
 void CPU::run()

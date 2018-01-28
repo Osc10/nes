@@ -11,6 +11,10 @@ iostream
 -
 memory.h
 ../nes/inc/memory.h
+iomanip
+-
+string
+-
 
 ../nes/inc/ines.h
 fstream
@@ -18,6 +22,8 @@ fstream
 iostream
 -
 string
+-
+bitset
 -
 memory.h
 ../nes/inc/memory.h
@@ -29,8 +35,6 @@ cstdint
 /home/oscar/github/nes/nes/src/cpu.cpp
 cpu.h
 /home/oscar/github/nes/nes/src/cpu.h
-iomanip
--
 
 /home/oscar/github/nes/nes/src/ines.cpp
 ines.h

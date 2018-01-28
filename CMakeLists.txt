@@ -17,6 +17,7 @@ set(NES_COMPILE_FLAGS
 	-pedantic
 	-Wall
 	-Wextra
+	-DNDEBUG
 )
 
 include_directories(${NES_INC})

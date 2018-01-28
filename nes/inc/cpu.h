@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include "memory.h"
+#include <iomanip>
+#include <string>
 
 class CPU // Implementation of the 2A03 processor
 {
@@ -22,12 +24,13 @@ private:
 	uint8_t S; // Stack Pointer
 	uint16_t PC; // Program Counter
 
-
 	uint8_t opcode;
+
+	int instructionNumber = 0;
 
 	Memory *memory;
 
-	uint8_t readMem();
+	uint16_t readMem();
 	void writeMem(uint8_t val);
 	void setZN(uint8_t val);
 	void setFlags(uint8_t val);
@@ -39,8 +42,11 @@ private:
 	uint16_t pullFromStack16();
 
 	void readOpcode();
+	void incrementPC(uint8_t opcode);
 	void executeInstruction();
 
+	void printLog(uint8_t opcode);
+	
 	void initialize();
 };
 #endif
