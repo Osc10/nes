@@ -175,32 +175,66 @@ inline uint8_t CPU::readStatus()
 	return status;
 }
 
-uint16_t CPU::readMem()
+uint16_t CPU::readAddress()
 {
 	switch(instructionMode[opcode])
 	{
-		uint16_t offset, addr;
+		uint8_t offset;
+		uint16_t addr;
+		case immediate:
+			return PC + 1;
+		case zeroPage:
+			return memory->mem[PC + 1];
+		case zeroPageX:
+			return (X + memory->mem[PC + 1]) & 0xFF;
+		case zeroPageY:
+			return (Y + memory->mem[PC + 1]) & 0xFF;
+		case absolute:
+			return read16(&memory->mem[PC + 1]); 
+		case absoluteX:
+			return read16(memory->mem + PC + 1) + X;
+		case absoluteY:
+			return read16(memory->mem + PC + 1) + Y;
+		case indirectIndexed:
+			offset = memory->mem[PC + 1];
+			if(offset != 0xFF)
+				return read16(memory->mem + memory->mem[PC + 1]) + Y;
+			else
+				return ((memory->mem[0] << 8) | memory->mem[0xFF]) + Y;
+		case indexedIndirect:
+			offset = (X + memory->mem[PC + 1]) & 0xFF;
+			if(offset != 0xFF)	
+				return read16(memory->mem + offset);
+			else
+				return ((memory->mem[0] << 8) | memory->mem[0xFF]);
+		case indirect:
+			addr = read16(&memory->mem[PC + 1]);
+			if((addr & 0xFF) != 0xFF)
+				return read16(&memory->mem[read16(&memory->mem[PC + 1])]);
+			else
+				return (memory->mem[addr & 0xFF00] << 8) | memory->mem[addr];
+		default:
+			return 0;
+	}
+}
+
+uint8_t CPU::readMem()
+{
+	switch(instructionMode[opcode])
+	{
 		case accumulator:
 			return A;
 		case immediate:
-			return memory->mem[PC + 1];
 		case zeroPage:
-			return memory->mem[memory->mem[PC + 1]];
 		case zeroPageX:
-			offset = (X + memory->mem[PC + 1]) && 0xFF;
-			return memory->mem[offset];
+		case zeroPageY:
 		case absolute:
-			return read16(&memory->mem[PC + 1]);
 		case absoluteX:
-			return memory->mem[read16(memory->mem + PC + 1) + X];
 		case absoluteY:
-			return memory->mem[read16(memory->mem + PC + 1) + Y];
 		case indirectIndexed:
-			addr = read16(memory->mem + memory->mem[PC + 1]) + Y;
-			return memory->mem[addr];
 		case indexedIndirect:
-			offset = (X + memory->mem[PC + 1]) && 0xFF;
-			return memory->mem[read16(memory->mem + offset)];
+			return memory->mem[readAddress()];
+
 		default:
 			cerr << "Invalid opcode: " << hex << (int)opcode << dec << "\n";
 			return 1;
@@ -211,36 +245,19 @@ void CPU::writeMem(uint8_t val)
 {
 	switch(instructionMode[opcode])
 	{
-		uint16_t offset, addr;
 		case accumulator:
 			A = val;
 			break;
 		case immediate:
-			memory->mem[PC + 1] = val;
-			break;
 		case zeroPage:
-			memory->mem[memory->mem[PC + 1]] = val;
-			break;
 		case zeroPageX:
-			offset = (X + memory->mem[PC + 1]) && 0xFF;
-			memory->mem[offset] = val;
-			break;
+		case zeroPageY:
 		case absolute:
-			memory->mem[read16(memory->mem + PC + 1)] = val;
-			break;
 		case absoluteX:
-			memory->mem[read16(memory->mem + PC + 1) + X] = val;
-			break;
 		case absoluteY:
-			memory->mem[read16(memory->mem + PC + 1) + Y] = val;
-			break;
 		case indirectIndexed:
-			addr = read16(memory->mem + memory->mem[PC + 1]) + Y;
-			memory->mem[addr] = val;
-			break;
 		case indexedIndirect:
-			offset = (X + memory->mem[PC + 1]) && 0xFF;
-			memory->mem[read16(memory->mem + offset)] = val;
+			memory->mem[readAddress()] = val;
 			break;
 		default:
 			break;
@@ -413,6 +430,16 @@ void CPU::executeInstruction()
 			setZN(Y - b);
 			break;
 
+		//DEC
+		case 0xC6:
+		case 0xD6:
+		case 0xCE:
+		case 0xDE:
+			a = readMem() - 1;
+			setZN(a);
+			writeMem(a);
+			break;
+
 		//DEX
 		case 0xCA:
 			--X;
@@ -439,6 +466,16 @@ void CPU::executeInstruction()
 			setZN(A);
 			break;
 
+		//INC
+		case 0xE6:
+		case 0xF6:
+		case 0xEE:
+		case 0xFE:
+			a = readMem() + 1;
+			setZN(a);
+			writeMem(a);
+			break;
+
 		//INX
 		case 0xE8:
 			++X;
@@ -453,10 +490,8 @@ void CPU::executeInstruction()
 
 		//JMP
 		case 0x4C:
-			PC = readMem();
-			break;
 		case 0x6C:
-			PC = read16(&memory->mem[read16(&memory->mem[PC + 1])]);
+			PC = readAddress();
 			break;
 
 		//JSR
@@ -498,6 +533,19 @@ void CPU::executeInstruction()
 			setZN(Y);
 			break;
 
+		//LSR
+		case 0x4A:
+		case 0x46:
+		case 0x56:
+		case 0x4E:
+		case 0x5E:
+			a = readMem();
+			C = a & 0x1;
+			a = a >> 1;
+			writeMem(a);
+			setZN(a);
+			break;
+
 		//NOP
 		case 0xEA:
 			break;
@@ -534,6 +582,34 @@ void CPU::executeInstruction()
 		//PLP
 		case 0x28:
 			setFlags(pullFromStack());
+			break;
+
+		//ROL
+		case 0x2A:
+		case 0x26:
+		case 0x36:
+		case 0x2E:
+		case 0x3E:
+			a = readMem();
+			c = a & (1 << 7);
+			a = (a << 1) | C;
+			C = c;
+			writeMem(a);
+			setZN(a);
+			break;
+
+		//ROR
+		case 0x6A:
+		case 0x66:
+		case 0x76:
+		case 0x6E:
+		case 0x7E:
+			a = readMem();
+			c = a & 0x1;
+			a = (a >> 1) | (C << 7);
+			C = c;
+			writeMem(a);
+			setZN(a);
 			break;
 
 		//RTI
@@ -604,6 +680,13 @@ void CPU::executeInstruction()
 			writeMem(X);
 			break;
 
+		//STY
+		case 0x84:
+		case 0x94:
+		case 0x8C:
+			writeMem(Y);
+			break;
+			
 		//TAX
 		case 0xAA:
 			X = A;
@@ -652,9 +735,11 @@ void CPU::incrementPC(uint8_t opcode)
 {
 	switch(opcode)
 	{
+		case 0x40:
 		case 0x4C:
 		case 0x20:
 		case 0x60:
+		case 0x6C:
 			break;
 
 		default:

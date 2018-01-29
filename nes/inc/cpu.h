@@ -30,7 +30,8 @@ private:
 
 	Memory *memory;
 
-	uint16_t readMem();
+	uint16_t readAddress();
+	uint8_t readMem();
 	void writeMem(uint8_t val);
 	void setZN(uint8_t val);
 	void setFlags(uint8_t val);
