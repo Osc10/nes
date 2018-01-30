@@ -8,6 +8,7 @@ set(CMAKE_DEPENDS_CHECK_CXX
   "/home/oscar/github/nes/nes/src/ines.cpp" "/home/oscar/github/nes/build/CMakeFiles/nes.dir/nes/src/ines.cpp.o"
   "/home/oscar/github/nes/nes/src/main.cpp" "/home/oscar/github/nes/build/CMakeFiles/nes.dir/nes/src/main.cpp.o"
   "/home/oscar/github/nes/nes/src/memory.cpp" "/home/oscar/github/nes/build/CMakeFiles/nes.dir/nes/src/memory.cpp.o"
+  "/home/oscar/github/nes/nes/src/ppu.cpp" "/home/oscar/github/nes/build/CMakeFiles/nes.dir/nes/src/ppu.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

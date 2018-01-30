@@ -17,3 +17,5 @@ CMakeFiles/nes.dir/nes/src/main.cpp.o: ../nes/src/main.cpp
 CMakeFiles/nes.dir/nes/src/memory.cpp.o: ../nes/inc/memory.h
 CMakeFiles/nes.dir/nes/src/memory.cpp.o: ../nes/src/memory.cpp
 
+CMakeFiles/nes.dir/nes/src/ppu.cpp.o: ../nes/src/ppu.cpp
+

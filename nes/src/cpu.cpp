@@ -93,7 +93,7 @@ string instructionName[256] = {
 	"SED", "SBC", "NOP", "ISC", "NOP", "SBC", "INC", "ISC"
 };
 
-#define read16(address) ((address)[0] | ((address)[1] << 8))
+#define read16(address) (memory->read(address) | (memory->read(address + 1) << 8))
 
 void CPU::printLog(uint8_t opcode)
 {
@@ -104,7 +104,7 @@ void CPU::printLog(uint8_t opcode)
 	{
 		cout << setw(2);
 		if(i < instructionSize[opcode])
-			cout << setfill('0') << (int)memory->mem[PC + i] << " ";
+			cout << setfill('0') << (int)memory->read(PC + i) << " ";
 		else
 			cout << "   ";
 	}
@@ -140,12 +140,12 @@ inline uint8_t CPU::readFlags()
 
 inline void CPU::readOpcode()
 {
-	opcode = memory->mem[PC];	
+	opcode = memory->read(PC);	
 }
 
 inline void CPU::pushToStack(uint8_t val)
 {
-	memory->mem[0x0100 + S] = val;	
+	memory->write(0x0100 + S, val);	
 	--S;
 }
 
@@ -158,7 +158,7 @@ inline void CPU::pushToStack16(uint16_t val)
 inline uint8_t CPU::pullFromStack()
 {
 	++S;
-	return memory->mem[0x0100 + S];
+	return memory->read(0x0100 + S);
 }
 
 inline uint16_t CPU::pullFromStack16()
@@ -184,35 +184,35 @@ uint16_t CPU::readAddress()
 		case immediate:
 			return PC + 1;
 		case zeroPage:
-			return memory->mem[PC + 1];
+			return memory->read(PC + 1);
 		case zeroPageX:
-			return (X + memory->mem[PC + 1]) & 0xFF;
+			return (X + memory->read(PC + 1)) & 0xFF;
 		case zeroPageY:
-			return (Y + memory->mem[PC + 1]) & 0xFF;
+			return (Y + memory->read(PC + 1)) & 0xFF;
 		case absolute:
-			return read16(&memory->mem[PC + 1]); 
+			return read16(PC + 1); 
 		case absoluteX:
-			return read16(memory->mem + PC + 1) + X;
+			return read16(PC + 1) + X;
 		case absoluteY:
-			return read16(memory->mem + PC + 1) + Y;
+			return read16(PC + 1) + Y;
 		case indirectIndexed:
-			offset = memory->mem[PC + 1];
+			offset = memory->read(PC + 1);
 			if(offset != 0xFF)
-				return read16(memory->mem + memory->mem[PC + 1]) + Y;
+				return read16(memory->read(PC + 1)) + Y;
 			else
-				return ((memory->mem[0] << 8) | memory->mem[0xFF]) + Y;
+				return ((memory->read(0) << 8) | memory->read(0xFF)) + Y;
 		case indexedIndirect:
-			offset = (X + memory->mem[PC + 1]) & 0xFF;
+			offset = (X + memory->read(PC + 1)) & 0xFF;
 			if(offset != 0xFF)	
-				return read16(memory->mem + offset);
+				return read16(offset);
 			else
-				return ((memory->mem[0] << 8) | memory->mem[0xFF]);
+				return ((memory->read(0) << 8) | memory->read(0xFF));
 		case indirect:
-			addr = read16(&memory->mem[PC + 1]);
+			addr = read16(PC + 1);
 			if((addr & 0xFF) != 0xFF)
-				return read16(&memory->mem[read16(&memory->mem[PC + 1])]);
+				return read16(read16(PC + 1));
 			else
-				return (memory->mem[addr & 0xFF00] << 8) | memory->mem[addr];
+				return (memory->read(addr & 0xFF00) << 8) | memory->read(addr);
 		default:
 			return 0;
 	}
@@ -233,7 +233,7 @@ uint8_t CPU::readMem()
 		case absoluteY:
 		case indirectIndexed:
 		case indexedIndirect:
-			return memory->mem[readAddress()];
+			return memory->read(readAddress());
 
 		default:
 			cerr << "Invalid opcode: " << hex << (int)opcode << dec << "\n";
@@ -257,7 +257,7 @@ void CPU::writeMem(uint8_t val)
 		case absoluteY:
 		case indirectIndexed:
 		case indexedIndirect:
-			memory->mem[readAddress()] = val;
+			memory->write(readAddress(), val);
 			break;
 		default:
 			break;
@@ -329,19 +329,19 @@ void CPU::executeInstruction()
 		//BCC
 		case 0x90:
 			if(C == 0)
-				PC += (int8_t)memory->mem[PC + 1];
+				PC += (int8_t)memory->read(PC + 1);
 			break;
 
 		//BCS
 		case 0xB0:
 			if(C != 0)
-				PC += (int8_t)memory->mem[PC + 1];
+				PC += (int8_t)memory->read(PC + 1);
 			break;
 
 		//BEQ
 		case 0xF0:
 			if(Z != 0)
-				PC += (int8_t)memory->mem[PC + 1];
+				PC += (int8_t)memory->read(PC + 1);
 			break;
 
 		//BIT
@@ -356,31 +356,31 @@ void CPU::executeInstruction()
 		//BMI
 		case 0x30:
 			if(N != 0)
-				PC += (int8_t)memory->mem[PC + 1];
+				PC += (int8_t)memory->read(PC + 1);
 			break;
 
 		//BNE
 		case 0xD0:
 			if(Z == 0)
-				PC += (int8_t)memory->mem[PC + 1];
+				PC += (int8_t)memory->read(PC + 1);
 			break;
 
 		//BPL
 		case 0x10:
 			if(N == 0)
-				PC += (int8_t)memory->mem[PC + 1];
+				PC += (int8_t)memory->read(PC + 1);
 			break;
 
 		//BVC
 		case 0x50:
 			if(V == 0)
-				PC += (int8_t)memory->mem[PC + 1];
+				PC += (int8_t)memory->read(PC + 1);
 			break;
 
 		//BVS
 		case 0x70:
 			if(V != 0)
-				PC += (int8_t)memory->mem[PC + 1];
+				PC += (int8_t)memory->read(PC + 1);
 			break;
 
 		//CLC
@@ -497,7 +497,7 @@ void CPU::executeInstruction()
 		//JSR
 		case 0x20:
 			pushToStack16(PC + 2);
-			PC = read16(&memory->mem[PC + 1]);
+			PC = read16(PC + 1);
 			break;
 
 		//LDA
@@ -547,7 +547,30 @@ void CPU::executeInstruction()
 			break;
 
 		//NOP
+		case 0x04:
+		case 0x0C:
+		case 0x14:
+		case 0x1C:
+		case 0x34:
+		case 0x3C:
+		case 0x44:
+		case 0x54:
+		case 0x5C:
+		case 0x64:
+		case 0x74:
+		case 0x7C:
+		case 0x80:
+		case 0xD4:
+		case 0xDC:
+		case 0xF4:
+		case 0xFC:
+		case 0x1A:
+		case 0x3A:
+		case 0x5A:
+		case 0x7A:
+		case 0xDA:
 		case 0xEA:
+		case 0xFA:
 			break;
 
 		//ORA
@@ -752,7 +775,7 @@ void CPU::initialize()
 	if(!memory->isLoaded)
 		cerr << "CPU running while memory has not been initialized!\n";
 
-	PC = read16(&memory->mem[0xFFFC]);
+	PC = read16(0xFFFC);
 	PC = 0xC000; // Automating nestest
 	S = 0xFD; // Automating nestest
 }

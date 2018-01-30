@@ -33,14 +33,14 @@ void ines::loadPrgRom()
 
 	if(sizeOfPrgRom == 1)
 	{
-		inesFile.read((char*)(&memory->mem[0x8000]), 16384);
+		inesFile.read((char*)(memory->programROM), 16384);
 		if(!inesFile)
 		{
 			cerr << "Failed to read program ROM (mirror 1)!\n";
 			cerr << "Only " << inesFile.gcount() << " could be read.\n";
 		}
 		inesFile.seekg(trainerOffset);
-		inesFile.read((char*)(&memory->mem[0xC000]), 16384);
+		inesFile.read((char*)(&memory->programROM[0x4000]), 16384);
 		if(!inesFile)
 		{
 			cerr << "Failed to read program ROM (mirror 2)!\n";
@@ -49,7 +49,7 @@ void ines::loadPrgRom()
 	}
 	else
 	{
-		inesFile.read((char*)(&memory->mem[0x8000]), 32768);
+		inesFile.read((char*)(memory->programROM), 32768);
 		if(!inesFile)
 			cerr << "Failed to read program ROM!\n";
 	}

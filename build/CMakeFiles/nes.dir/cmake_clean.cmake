@@ -1,5 +1,6 @@
 file(REMOVE_RECURSE
   "CMakeFiles/nes.dir/nes/src/cpu.cpp.o"
+  "CMakeFiles/nes.dir/nes/src/ppu.cpp.o"
   "CMakeFiles/nes.dir/nes/src/ines.cpp.o"
   "CMakeFiles/nes.dir/nes/src/memory.cpp.o"
   "CMakeFiles/nes.dir/nes/src/main.cpp.o"

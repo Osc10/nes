@@ -52,3 +52,5 @@ cpu.h
 memory.h
 /home/oscar/github/nes/nes/src/memory.h
 
+/home/oscar/github/nes/nes/src/ppu.cpp
+

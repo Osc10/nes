@@ -231,6 +231,33 @@ nes/src/memory.cpp.s:
 	$(MAKE) -f CMakeFiles/nes.dir/build.make CMakeFiles/nes.dir/nes/src/memory.cpp.s
 .PHONY : nes/src/memory.cpp.s
 
+nes/src/ppu.o: nes/src/ppu.cpp.o
+
+.PHONY : nes/src/ppu.o
+
+# target to build an object file
+nes/src/ppu.cpp.o:
+	$(MAKE) -f CMakeFiles/nes.dir/build.make CMakeFiles/nes.dir/nes/src/ppu.cpp.o
+.PHONY : nes/src/ppu.cpp.o
+
+nes/src/ppu.i: nes/src/ppu.cpp.i
+
+.PHONY : nes/src/ppu.i
+
+# target to preprocess a source file
+nes/src/ppu.cpp.i:
+	$(MAKE) -f CMakeFiles/nes.dir/build.make CMakeFiles/nes.dir/nes/src/ppu.cpp.i
+.PHONY : nes/src/ppu.cpp.i
+
+nes/src/ppu.s: nes/src/ppu.cpp.s
+
+.PHONY : nes/src/ppu.s
+
+# target to generate assembly for a file
+nes/src/ppu.cpp.s:
+	$(MAKE) -f CMakeFiles/nes.dir/build.make CMakeFiles/nes.dir/nes/src/ppu.cpp.s
+.PHONY : nes/src/ppu.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -252,6 +279,9 @@ help:
 	@echo "... nes/src/memory.o"
 	@echo "... nes/src/memory.i"
 	@echo "... nes/src/memory.s"
+	@echo "... nes/src/ppu.o"
+	@echo "... nes/src/ppu.i"
+	@echo "... nes/src/ppu.s"
 .PHONY : help
 
 
