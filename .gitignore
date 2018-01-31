@@ -2,8 +2,7 @@
 .ycm_extra_conf.py
 ./build/CMakeCache.txt
 .color_coded
-./build/Makefile
 *.swp
-./build/CMakeFiles/*
+./build/CMakeFiles
 ./build/CMakeCache.txt
 ./build/cmake_install.cmake
