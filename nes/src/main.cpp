@@ -4,7 +4,7 @@
 
 int main()
 {
-	Memory mem;
+	CPUMemory mem;
 	CPU cpu(&mem);
 
 	ines rom;

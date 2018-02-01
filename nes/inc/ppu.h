@@ -1,9 +1,50 @@
 #ifndef PPU_H
 #define PPU_H
 
-// 10KB of memory - 8KB on ROM and 2KB on machine.
-// 2 more address spaces for a palette (colours) and OAM (position, orientation, shape and colour of sprites)
-// Palette is static memory, OAM dynamic (and decays if PPU not rendering data)
+class PPU
+{
+public:
+private:
 
-// PPU exposes eight memory-mapped registers to CPU at $2000 - $2007, mirrored in every 8 bytes from $2008 to $3FFF
+    //$2000 - PPUCTRL
+    //VPHB SINN
+    uint8_t nmiEnable; //V 
+    uint8_t ppuMasterSlave; //P 
+    uint8_t spriteHeight; //H 
+    uint8_t backgroundTileSelect; //B 
+    uint8_t spriteTileSelect; //S 
+    uint8_t incrementMode; //I 
+    uint8_t nameTableSelect; //NN
+
+    //$2001 - PPUMASK
+    //BGRs bMmG
+    uint8_t colorEmphasis; //BGR
+    uint8_t spriteEnable; //s 
+    uint8_t backgroundEnable; //b 
+    uint8_t spriteLeftColumnEnable; //M 
+    uint8_t backgroundLeftColumnEnable; //m 
+    uint8_t greyscale; //G 
+
+    //$2002 - PPUSTATUS
+    //VSO- ----
+    uint8_t vblank; //V 
+    uint8_t sprite0Hit; //S 
+    uint8_t spriteOverflow; //O 
+        
+    //$2003 - OAMADDR
+    uint8_t oamAddress;
+
+    //$2004 - OAMDATA
+    uint8_t oamData;
+
+    //$2005 - PPUSCROLL
+        
+    //$2006 - PPUADDR
+    uint8_t pprAddress;
+
+    //$2007 - PPUDATA
+    uint8_t pprData;
+
+    //$4014 - OAMDMA
+};
 #endif

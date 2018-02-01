@@ -10,13 +10,13 @@
 class ines
 {
 public:
-	void load(string path, Memory *mem);
+	void load(string path, CPUMemory *mem);
 
 private:
 	uint8_t inesHeader[16]; 
 	ifstream inesFile;
 	string inesPath;
-	Memory *memory;
+	CPUMemory *memory;
 
 	void loadHeader();
 	void loadPrgRom();

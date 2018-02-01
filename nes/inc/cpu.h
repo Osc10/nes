@@ -9,7 +9,7 @@
 class CPU // Implementation of the 2A03 processor
 {
 public:
-	CPU(Memory *mem) : memory(mem) {}
+	CPU(CPUMemory *mem) : memory(mem) {}
 	void run();
 private:
 	uint8_t A; // Accumulator
@@ -28,7 +28,7 @@ private:
 
 	int instructionNumber = 0;
 
-	Memory *memory;
+	CPUMemory *memory;
 
 	uint16_t readAddress();
 	uint8_t readMem();

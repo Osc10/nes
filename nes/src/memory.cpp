@@ -1,6 +1,6 @@
 #include "memory.h"
 
-uint8_t Memory::read(uint16_t address)
+uint8_t CPUMemory::read(uint16_t address)
 {
 	if(address < 0x2000)
 		return ram[address & 0x7FF];
@@ -19,7 +19,7 @@ uint8_t Memory::read(uint16_t address)
 		return programROM[address & 0x7FFF];
 }
 
-void Memory::write(uint16_t address, uint8_t val)
+void CPUMemory::write(uint16_t address, uint8_t val)
 {
 	if(address < 0x2000)
 		ram[address & 0x7FF] = val;
@@ -39,3 +39,24 @@ void Memory::write(uint16_t address, uint8_t val)
 }
 
 
+uint8_t PPUMemory::read(uint16_t address)
+{
+	address = address & 0x3FFF;
+	if(address < 0x2000)
+		return patternTables[address];
+	else if(address < 0x3F00)
+		return nameTables[address & 0x0FFF];
+	else
+		return palettes[address & 0x1F];
+}
+
+void PPUMemory::write(uint16_t address, uint8_t val)
+{
+	address = address & 0x3FFF;
+	if(address < 0x2000)
+		patternTables[address] = val;
+	else if(address < 0x3F00)
+		nameTables[address & 0x0FFF] = val;
+	else
+		palettes[address & 0x1F] = val;
+}

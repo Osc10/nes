@@ -1,8 +1,10 @@
 *.nes
 .ycm_extra_conf.py
-./build/CMakeCache.txt
+build/CMakeCache.txt
 .color_coded
 *.swp
-./build/CMakeFiles
-./build/CMakeCache.txt
-./build/cmake_install.cmake
+build/CMakeFiles
+build/CMakeCache.txt
+build/cmake_install.cmake
+build/Makefile
+build/nes

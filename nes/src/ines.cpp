@@ -1,6 +1,6 @@
 #include "ines.h"
 
-void ines::load(string path, Memory *mem)
+void ines::load(string path, CPUMemory *mem)
 {
 	inesPath = path;
 	memory = mem;
