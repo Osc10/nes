@@ -1,4 +1,5 @@
 #include "cpu.h"
+
 enum addressingMode
 {
 	absolute,
@@ -175,7 +176,7 @@ inline uint8_t CPU::readStatus()
 	return status;
 }
 
-uint16_t CPU::readAddress()
+uint16_t CPU::readCurrentAddress()
 {
 	switch(instructionMode[opcode])
 	{
@@ -218,7 +219,7 @@ uint16_t CPU::readAddress()
 	}
 }
 
-uint8_t CPU::readMem()
+uint8_t CPU::readCurrentMem()
 {
 	switch(instructionMode[opcode])
 	{
@@ -233,7 +234,7 @@ uint8_t CPU::readMem()
 		case absoluteY:
 		case indirectIndexed:
 		case indexedIndirect:
-			return memory->read(readAddress());
+			return memory->read(readCurrentAddress());
 
 		default:
 			cerr << "Invalid opcode: " << hex << (int)opcode << dec << "\n";
@@ -241,7 +242,7 @@ uint8_t CPU::readMem()
 	}
 }
 
-void CPU::writeMem(uint8_t val)
+void CPU::writeCurrentMem(uint8_t val)
 {
 	switch(instructionMode[opcode])
 	{
@@ -257,7 +258,7 @@ void CPU::writeMem(uint8_t val)
 		case absoluteY:
 		case indirectIndexed:
 		case indexedIndirect:
-			memory->write(readAddress(), val);
+			memory->write(readCurrentAddress(), val);
 			break;
 		default:
 			break;
@@ -285,7 +286,7 @@ void CPU::executeInstruction()
 		case 0x61:
 		case 0x71:
 			a = A;
-			b = readMem();
+			b = readCurrentMem();
 			c = C;
 
 			sum = a + b + c;
@@ -309,7 +310,7 @@ void CPU::executeInstruction()
 		case 0x39:
 		case 0x21:
 		case 0x31:
-			A &= readMem();
+			A &= readCurrentMem();
 			setZN(A);
 			break;
 
@@ -319,10 +320,10 @@ void CPU::executeInstruction()
 		case 0x16:
 		case 0x0E:
 		case 0x1E:
-			a = readMem();
+			a = readCurrentMem();
 			C = (a & 0x80) >> 7;
 			a = a << 1;
-			writeMem(a);
+			writeCurrentMem(a);
 			setZN(a);
 			break;
 		
@@ -347,7 +348,7 @@ void CPU::executeInstruction()
 		//BIT
 		case 0x24:
 		case 0x2C:
-			b = readMem();
+			b = readCurrentMem();
 			Z = ((b & A) == 0) ? 1 : 0;
 			V = (b & 0x40) >> 6;
 			N = (b & 0x80) >> 7;
@@ -407,7 +408,7 @@ void CPU::executeInstruction()
 		case 0xD9:
 		case 0xC1:
 		case 0xD1:
-			b = readMem();
+			b = readCurrentMem();
 			C = (A >= b) ? 1 : 0;
 			setZN(A - b);
 			break;
@@ -416,7 +417,7 @@ void CPU::executeInstruction()
 		case 0xE0:
 		case 0xE4:
 		case 0xEC:
-			b = readMem();
+			b = readCurrentMem();
 			C = (X >= b) ? 1 : 0;
 			setZN(X - b);
 			break;
@@ -425,7 +426,7 @@ void CPU::executeInstruction()
 		case 0xC0:
 		case 0xC4:
 		case 0xCC:
-			b = readMem();
+			b = readCurrentMem();
 			C = (Y >= b) ? 1 : 0;
 			setZN(Y - b);
 			break;
@@ -435,9 +436,9 @@ void CPU::executeInstruction()
 		case 0xD6:
 		case 0xCE:
 		case 0xDE:
-			a = readMem() - 1;
+			a = readCurrentMem() - 1;
 			setZN(a);
-			writeMem(a);
+			writeCurrentMem(a);
 			break;
 
 		//DEX
@@ -461,7 +462,7 @@ void CPU::executeInstruction()
 		case 0x59:
 		case 0x41:
 		case 0x51:
-			b = readMem();
+			b = readCurrentMem();
 			A = A ^ b;
 			setZN(A);
 			break;
@@ -471,9 +472,9 @@ void CPU::executeInstruction()
 		case 0xF6:
 		case 0xEE:
 		case 0xFE:
-			a = readMem() + 1;
+			a = readCurrentMem() + 1;
 			setZN(a);
-			writeMem(a);
+			writeCurrentMem(a);
 			break;
 
 		//INX
@@ -491,7 +492,7 @@ void CPU::executeInstruction()
 		//JMP
 		case 0x4C:
 		case 0x6C:
-			PC = readAddress();
+			PC = readCurrentAddress();
 			break;
 
 		//JSR
@@ -509,7 +510,7 @@ void CPU::executeInstruction()
 		case 0xB9:
 		case 0xA1:
 		case 0xB1:
-			A = readMem();
+			A = readCurrentMem();
 			setZN(A);
 			break;
 
@@ -519,7 +520,7 @@ void CPU::executeInstruction()
 		case 0xB6:
 		case 0xAE:
 		case 0xBE:
-			X = readMem();
+			X = readCurrentMem();
 			setZN(X);
 			break;
 
@@ -529,7 +530,7 @@ void CPU::executeInstruction()
 		case 0xB4:
 		case 0xAC:
 		case 0xBC:
-			Y = readMem();
+			Y = readCurrentMem();
 			setZN(Y);
 			break;
 
@@ -539,10 +540,10 @@ void CPU::executeInstruction()
 		case 0x56:
 		case 0x4E:
 		case 0x5E:
-			a = readMem();
+			a = readCurrentMem();
 			C = a & 0x1;
 			a = a >> 1;
-			writeMem(a);
+			writeCurrentMem(a);
 			setZN(a);
 			break;
 
@@ -582,7 +583,7 @@ void CPU::executeInstruction()
 		case 0x19:
 		case 0x01:
 		case 0x11:
-			A = A | readMem();
+			A = A | readCurrentMem();
 			setZN(A);
 			break;
 
@@ -613,11 +614,11 @@ void CPU::executeInstruction()
 		case 0x36:
 		case 0x2E:
 		case 0x3E:
-			a = readMem();
+			a = readCurrentMem();
 			c = a & (1 << 7);
 			a = (a << 1) | C;
 			C = c;
-			writeMem(a);
+			writeCurrentMem(a);
 			setZN(a);
 			break;
 
@@ -627,11 +628,11 @@ void CPU::executeInstruction()
 		case 0x76:
 		case 0x6E:
 		case 0x7E:
-			a = readMem();
+			a = readCurrentMem();
 			c = a & 0x1;
 			a = (a >> 1) | (C << 7);
 			C = c;
-			writeMem(a);
+			writeCurrentMem(a);
 			setZN(a);
 			break;
 
@@ -656,7 +657,7 @@ void CPU::executeInstruction()
 		case 0xE1:
 		case 0xF1:
 			a = A;
-			b = readMem();
+			b = readCurrentMem();
 			c = C;
 
 			A = a - b - (1 - c);
@@ -693,21 +694,21 @@ void CPU::executeInstruction()
 		case 0x99:
 		case 0x81:
 		case 0x91:
-			writeMem(A);
+			writeCurrentMem(A);
 			break;
 
 		//STX
 		case 0x86:
 		case 0x96:
 		case 0x8E:
-			writeMem(X);
+			writeCurrentMem(X);
 			break;
 
 		//STY
 		case 0x84:
 		case 0x94:
 		case 0x8C:
-			writeMem(Y);
+			writeCurrentMem(Y);
 			break;
 			
 		//TAX
@@ -789,3 +790,4 @@ void CPU::run()
 		executeInstruction();
 	}
 }
+

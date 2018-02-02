@@ -7,7 +7,7 @@ uint8_t CPUMemory::read(uint16_t address)
 	else if(address < 0x4020)
 	{
 		if(address < 0x4000)
-			return ppuRegisters[address & 0x7];
+			ppuMemory->readRegister(address);
 		else
 			return ioRegisters[address & 0x1F];
 	}
@@ -26,7 +26,7 @@ void CPUMemory::write(uint16_t address, uint8_t val)
 	else if(address < 0x4020)
 	{
 		if(address < 0x4000)
-			ppuRegisters[address & 0x7] = val;
+			ppuMemory->writeRegister(address, val);
 		else
 			ioRegisters[address & 0x1F] = val;
 	}
@@ -38,6 +38,15 @@ void CPUMemory::write(uint16_t address, uint8_t val)
 		programROM[address & 0x7FFF] = val;
 }
 
+uint8_t PPUMemory::readRegister(uint16_t address)
+{
+	return ppuRegisters[address & 0x7];
+}
+	
+void PPUMemory::writeRegister(uint16_t address, uint8_t val)
+{
+	ppuRegisters[address & 0x7] = val;
+}
 
 uint8_t PPUMemory::read(uint16_t address)
 {

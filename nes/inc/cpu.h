@@ -2,9 +2,9 @@
 #define CPU_H
 
 #include <iostream>
-#include "memory.h"
 #include <iomanip>
 #include <string>
+#include "memory.h"
 
 class CPU // Implementation of the 2A03 processor
 {
@@ -12,6 +12,7 @@ public:
 	CPU(CPUMemory *mem) : memory(mem) {}
 	void run();
 private:
+	CPUMemory *memory;
 	uint8_t A; // Accumulator
 	uint8_t X, Y; // Index Registers
 
@@ -28,11 +29,12 @@ private:
 
 	int instructionNumber = 0;
 
-	CPUMemory *memory;
+	uint8_t read(uint16_t address) { return memory->read(address); }
+	void write(uint16_t address, uint8_t val) { memory->write(address, val); }
 
-	uint16_t readAddress();
-	uint8_t readMem();
-	void writeMem(uint8_t val);
+	uint16_t readCurrentAddress();
+	uint8_t readCurrentMem();
+	void writeCurrentMem(uint8_t val);
 	void setZN(uint8_t val);
 	void setFlags(uint8_t val);
 	uint8_t readFlags();
