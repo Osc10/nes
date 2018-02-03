@@ -7,10 +7,15 @@
 class PPU
 {
 public:
-	PPU() {};
+	PPU(PPUMemory *mem) : memory(mem) { memory->setPPU(*this); }
+	uint8_t readRegister(uint16_t address);
+	void writeRegister(uint16_t address, uint8_t val);
+	void executeInstruction();
 
 private:
 	PPUMemory *memory;
+
+	void writePPUSTATUS();
 
     //$2000 - PPUCTRL
     //VPHB SINN
@@ -34,8 +39,8 @@ private:
     //$2002 - PPUSTATUS
     //VSO- ----
     uint8_t vblank; //V - 0:not in vblank, 1:in vblank
-    //uint8_t sprite0Hit; //S 
-    //uint8_t spriteOverflow; //O 
+    uint8_t sprite0Hit; //S 
+    uint8_t spriteOverflow; //O 
         
     //$2003 - OAMADDR
     //uint8_t oamAddress;
@@ -47,7 +52,9 @@ private:
         
     //$2006 - PPUADDR
     uint16_t ppuAddress;
-
+	uint8_t ppuAddressUpper;
+	uint8_t ppuAddressLower;
+	uint8_t ppuAddressLoaded = 0;
 
     //$2007 - PPUDATA
     //uint8_t ppuData;

@@ -9,10 +9,17 @@ int main()
 	PPUMemory ppumem;
 	cpumem.setPPUMemory(&ppumem);
 	CPU cpu(&cpumem);
+	PPU ppu(&ppumem);
 
 	ines rom;
-	//rom.load("../donkeykong.nes", &mem);
-	rom.load("../test.nes", &cpumem);
+	rom.load("../donkeykong.nes", &cpumem);
+	//rom.load("../test.nes", &cpumem);
 
-	cpu.run();
+	cpu.initialize();
+
+	while(true)
+	{
+		cpu.executeInstruction();
+		ppu.executeInstruction();
+	}
 }

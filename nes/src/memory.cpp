@@ -1,4 +1,5 @@
 #include "memory.h"
+#include "ppu.h"
 
 uint8_t CPUMemory::read(uint16_t address)
 {
@@ -38,16 +39,6 @@ void CPUMemory::write(uint16_t address, uint8_t val)
 		programROM[address & 0x7FFF] = val;
 }
 
-uint8_t PPUMemory::readRegister(uint16_t address)
-{
-	return ppuRegisters[address & 0x7];
-}
-	
-void PPUMemory::writeRegister(uint16_t address, uint8_t val)
-{
-	ppuRegisters[address & 0x7] = val;
-}
-
 uint8_t PPUMemory::read(uint16_t address)
 {
 	address = address & 0x3FFF;
@@ -68,4 +59,14 @@ void PPUMemory::write(uint16_t address, uint8_t val)
 		nameTables[address & 0x0FFF] = val;
 	else
 		palettes[address & 0x1F] = val;
+}
+
+inline uint8_t PPUMemory::readRegister(uint16_t address) 
+{ 
+	return ppu->readRegister(address); 
+}
+
+inline void PPUMemory::writeRegister(uint16_t address, uint8_t val) 
+{ 
+	ppu->writeRegister(address, val); 
 }

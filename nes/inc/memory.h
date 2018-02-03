@@ -9,7 +9,6 @@ using namespace std;
 class Memory
 {
 public:
-	bool isLoaded = false;
 	virtual uint8_t read(uint16_t address) = 0;
 	virtual void write(uint16_t address, uint8_t val) = 0;
 };
@@ -21,10 +20,12 @@ public:
 	void write(uint16_t address, uint8_t val);
 	uint8_t readRegister(uint16_t address);
 	void writeRegister(uint16_t address, uint8_t val);
-
-private:
+	void setPPU(PPU &parentPPU) { ppu = &parentPPU; }
 	uint8_t OAMDMA;
 	uint8_t ppuRegisters[0x8];
+
+private:
+	PPU *ppu;
 	uint8_t palettes[0x20];
 	uint8_t nameTables[0x1000];
 	uint8_t patternTables[0x2000];
@@ -33,6 +34,7 @@ private:
 class CPUMemory: public Memory
 {
 public:
+	bool isLoaded = false;
 	uint8_t read(uint16_t address);
 	void write(uint16_t address, uint8_t val);
 	uint8_t programROM[0x8000];

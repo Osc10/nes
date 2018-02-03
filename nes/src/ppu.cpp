@@ -1,6 +1,59 @@
 #include "ppu.h"
 #include "cpu.h"
 
+uint8_t PPU::readRegister(uint16_t address)
+{
+	uint8_t reg = memory->ppuRegisters[address & 0x7];
+	
+	switch(address & 0x7)
+	{
+		case 0x2:
+			vblank = 0;
+			//Clear address latch used by PPUSCROLL to be done.
+			//Clear address latch used by PPUADDR
+			ppuAddressLoaded = 0;
+			//Reading at the end of VBLANK will return 0 in vblank bit but still clear 
+			//address latch - to be implemented
+			break;
+		default:
+			break;
+	}
+
+	return reg;
+}
+
+void PPU::writeRegister(uint16_t address, uint8_t val)
+{
+	//Does not write to $2000 in first 30000 cycles
+	cout << (int)memory->ppuRegisters[0] << endl;
+	memory->ppuRegisters[address & 0x7] = val;
+	cout << "no" << endl;
+	switch(address & 0x7)
+	{
+		case 0x6:
+			if(ppuAddressLoaded == 0 || ppuAddressLoaded == 2)
+			{
+				ppuAddressUpper = val;
+				ppuAddressLoaded = 1;
+			}
+			else
+			{
+				ppuAddress = ((uint16_t)ppuAddressUpper << 7) | val;
+				ppuAddressLoaded = 2;
+			}
+			break;
+		case 0x7:
+			if(ppuAddressLoaded == 2)
+			{
+				memory->write(ppuAddress, val);
+				ppuAddress = (incrementModeFlag == 0) ? ppuAddress + 1 : ppuAddress + 32;
+			}
+			break;
+		default:
+			break;
+	}
+}
+
 //void readPPUCTRL()
 //{
 //	uint8_t flags = cpu->read(0x2000);
@@ -32,3 +85,14 @@
 //{
 //	vblank = 0; //vblank cleared reading PPUSTATUS - placeholder implementation
 //}
+
+void PPU::writePPUSTATUS()
+{
+	memory->ppuRegisters[0x2] = (vblank << 7) | (sprite0Hit << 6) | (spriteOverflow << 5);
+}
+
+void PPU::executeInstruction()
+{
+	vblank = 1;
+	writePPUSTATUS();
+}
