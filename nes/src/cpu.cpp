@@ -855,9 +855,9 @@ void CPU::initialize()
 	if(!memory->isLoaded)
 		cerr << "CPU running while memory has not been initialized!\n";
 
+	S = 0xFD; 
 	PC = read16(0xFFFC);
 	//PC = 0xC000; // Automating nestest
-	//S = 0xFD; // Automating nestest
 }
 
 void CPU::run()

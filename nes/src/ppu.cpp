@@ -25,9 +25,7 @@ uint8_t PPU::readRegister(uint16_t address)
 void PPU::writeRegister(uint16_t address, uint8_t val)
 {
 	//Does not write to $2000 in first 30000 cycles
-	cout << (int)memory->ppuRegisters[0] << endl;
 	memory->ppuRegisters[address & 0x7] = val;
-	cout << "no" << endl;
 	switch(address & 0x7)
 	{
 		case 0x6:
@@ -93,6 +91,4 @@ void PPU::writePPUSTATUS()
 
 void PPU::executeInstruction()
 {
-	vblank = 1;
-	writePPUSTATUS();
 }

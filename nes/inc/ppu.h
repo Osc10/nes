@@ -13,6 +13,7 @@ public:
 	void executeInstruction();
 
 private:
+	int cycles = 0;
 	PPUMemory *memory;
 
 	void writePPUSTATUS();
