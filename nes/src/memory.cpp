@@ -61,6 +61,19 @@ void PPUMemory::write(uint16_t address, uint8_t val)
 		palettes[address & 0x1F] = val;
 }
 
+void PPUMemory::printMemory()
+{
+	for(int i = 0; i < 0x400; ++i)
+    {
+	   	cout << hex << setfill('0') << setw(4) << (int)i*16 << ": ";
+        for(int j = 0; j < 16; ++j)
+        {
+		   	cout << hex << setfill('0') << setw(2) << (int)read(16 * i + j) << " ";
+        }
+        cout << dec << endl;
+    }
+}
+
 inline uint8_t PPUMemory::readRegister(uint16_t address) 
 { 
 	return ppu->readRegister(address); 

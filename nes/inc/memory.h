@@ -2,6 +2,8 @@
 #define MEMORY_H
 
 #include <cstdint>
+#include <iostream>
+#include <iomanip>
 #include "console.h"
 
 using namespace std;
@@ -23,6 +25,7 @@ public:
 	void setPPU(PPU &parentPPU) { ppu = &parentPPU; }
 	uint8_t OAMDMA;
 	uint8_t ppuRegisters[0x8];
+	void printMemory();
 
 private:
 	PPU *ppu;

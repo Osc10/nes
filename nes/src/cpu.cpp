@@ -17,7 +17,7 @@ enum addressingMode
 	zeroPageY
 };
 
-uint8_t instructionMode[256] = {
+const uint8_t instructionMode[256] = {
 
 	5, 6, 5, 6, 10, 10, 10, 10, 5, 4, 3, 4, 0, 0, 0, 0,
 	9, 8, 5, 8, 11, 11, 11, 11, 5, 2, 5, 2, 1, 1, 1, 1,
@@ -38,7 +38,7 @@ uint8_t instructionMode[256] = {
 
 };
 
-uint8_t instructionSize[256] = {
+const uint8_t instructionSize[256] = {
 
 	1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
 	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
@@ -59,7 +59,7 @@ uint8_t instructionSize[256] = {
 
 };
 
-string instructionName[256] = {
+const string instructionName[256] = {
 	"BRK", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO",
 	"PHP", "ORA", "ASL", "ANC", "NOP", "ORA", "ASL", "SLO",
 	"BPL", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO",
@@ -94,6 +94,44 @@ string instructionName[256] = {
 	"SED", "SBC", "NOP", "ISC", "NOP", "SBC", "INC", "ISC"
 };
 
+const uint8_t instructionCycles[256] = {
+	7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6,
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+	6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 4, 4, 6, 6,
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+	6, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 3, 4, 6, 6,
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+	6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 5, 4, 6, 6,
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+	2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4,
+	2, 6, 2, 6, 4, 4, 4, 4, 2, 5, 2, 5, 5, 5, 5, 5,
+	2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4,
+	2, 5, 2, 5, 4, 4, 4, 4, 2, 4, 2, 4, 4, 4, 4, 4,
+	2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6,
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+	2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6,
+	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
+};
+
+const uint8_t instructionPageCrossedCycles[256] = {
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
+};
+
 #define read16(address) (memory->read(address) | (memory->read(address + 1) << 8))
 
 void CPU::printLog(uint8_t opcode)
@@ -114,6 +152,7 @@ void CPU::printLog(uint8_t opcode)
 	cout << setfill(' ') << setw(3) << "X:" << setfill('0') << setw(2) << (int)X;
 	cout << setfill(' ') << setw(3) << "Y:" << setfill('0') << setw(2) << (int)Y;
 	cout << setfill(' ') << setw(4) << "SP:" << setfill('0') << setw(2) << (int)S;
+	cout << setfill(' ') << setw(5) << "CYC:" << setfill(' ') << dec << setw(3) << ((totalCycles - 1) * 3) % 341;
 	cout << endl;
 }
 
@@ -176,6 +215,19 @@ inline uint8_t CPU::readStatus()
 	return status;
 }
 
+inline bool CPU::pageCross(uint16_t addr1, uint16_t addr2)
+{
+	return (addr1 & 0xFF00) != (addr2 & 0xFF00);
+}
+
+//Add 1 to cycle if branch succeeds, and add 2 if it branches to a new page
+inline void CPU::addBranchCycles(uint16_t address, uint16_t programCounter)
+{
+	++cycles;
+	if(pageCross(address, programCounter + 2))
+		++cycles;
+}
+
 uint16_t CPU::readCurrentAddress()
 {
 	switch(instructionMode[opcode])
@@ -193,15 +245,21 @@ uint16_t CPU::readCurrentAddress()
 		case absolute:
 			return read16(PC + 1); 
 		case absoluteX:
-			return read16(PC + 1) + X;
+			addr = read16(PC + 1);
+			pageCrossed = pageCross(addr, addr + X);
+			return addr + X;
 		case absoluteY:
-			return read16(PC + 1) + Y;
+			addr = read16(PC + 1);
+			pageCrossed = pageCross(addr, addr + Y);
+			return addr + Y;
 		case indirectIndexed:
 			offset = memory->read(PC + 1);
 			if(offset != 0xFF)
-				return read16(memory->read(PC + 1)) + Y;
+				addr = read16(memory->read(PC + 1));
 			else
-				return ((memory->read(0) << 8) | memory->read(0xFF)) + Y;
+				addr = (memory->read(0) << 8) | memory->read(0xFF);
+			pageCrossed = pageCross(addr, addr + Y);
+			return addr + Y;
 		case indexedIndirect:
 			offset = (X + memory->read(PC + 1)) & 0xFF;
 			if(offset != 0xFF)	
@@ -267,6 +325,11 @@ void CPU::writeCurrentMem(uint8_t val)
 
 void CPU::executeInstruction()
 {
+	totalCycles++;
+	cycles--;
+	if(cycles >= 0)
+		return;
+
 	readOpcode();
 #ifdef NDEBUG
 	printLog(opcode);
@@ -275,6 +338,7 @@ void CPU::executeInstruction()
 	{
 		uint8_t a, b, c;
 		uint16_t sum;
+		uint16_t address;
 
 		//ADC
 		case 0x69:
@@ -330,19 +394,31 @@ void CPU::executeInstruction()
 		//BCC
 		case 0x90:
 			if(C == 0)
-				PC += (int8_t)memory->read(PC + 1);
+			{
+				address = PC + (int8_t)memory->read(PC + 1);
+				addBranchCycles(address, PC);
+				PC = address;
+			}
 			break;
 
 		//BCS
 		case 0xB0:
 			if(C != 0)
-				PC += (int8_t)memory->read(PC + 1);
+			{
+				address = PC + (int8_t)memory->read(PC + 1);
+				addBranchCycles(address, PC);
+				PC = address;
+			}
 			break;
 
 		//BEQ
 		case 0xF0:
 			if(Z != 0)
-				PC += (int8_t)memory->read(PC + 1);
+			{
+				address = PC + (int8_t)memory->read(PC + 1);
+				addBranchCycles(address, PC);
+				PC = address;
+			}
 			break;
 
 		//BIT
@@ -357,31 +433,51 @@ void CPU::executeInstruction()
 		//BMI
 		case 0x30:
 			if(N != 0)
-				PC += (int8_t)memory->read(PC + 1);
+			{
+				address = PC + (int8_t)memory->read(PC + 1);
+				addBranchCycles(address, PC);
+				PC = address;
+			}
 			break;
 
 		//BNE
 		case 0xD0:
 			if(Z == 0)
-				PC += (int8_t)memory->read(PC + 1);
+			{
+				address = PC + (int8_t)memory->read(PC + 1);
+				addBranchCycles(address, PC);
+				PC = address;
+			}
 			break;
 
 		//BPL
 		case 0x10:
 			if(N == 0)
-				PC += (int8_t)memory->read(PC + 1);
+			{
+				address = PC + (int8_t)memory->read(PC + 1);
+				addBranchCycles(address, PC);
+				PC = address;
+			}
 			break;
 
 		//BVC
 		case 0x50:
 			if(V == 0)
-				PC += (int8_t)memory->read(PC + 1);
+			{
+				address = PC + (int8_t)memory->read(PC + 1);
+				addBranchCycles(address, PC);
+				PC = address;
+			}
 			break;
 
 		//BVS
 		case 0x70:
 			if(V != 0)
-				PC += (int8_t)memory->read(PC + 1);
+			{
+				address = PC + (int8_t)memory->read(PC + 1);
+				addBranchCycles(address, PC);
+				PC = address;
+			}
 			break;
 
 		//CLC
@@ -548,30 +644,7 @@ void CPU::executeInstruction()
 			break;
 
 		//NOP
-		case 0x04:
-		case 0x0C:
-		case 0x14:
-		case 0x1C:
-		case 0x34:
-		case 0x3C:
-		case 0x44:
-		case 0x54:
-		case 0x5C:
-		case 0x64:
-		case 0x74:
-		case 0x7C:
-		case 0x80:
-		case 0xD4:
-		case 0xDC:
-		case 0xF4:
-		case 0xFC:
-		case 0x1A:
-		case 0x3A:
-		case 0x5A:
-		case 0x7A:
-		case 0xDA:
 		case 0xEA:
-		case 0xFA:
 			break;
 
 		//ORA
@@ -752,6 +825,12 @@ void CPU::executeInstruction()
 
 	}
 
+	cycles += instructionCycles[opcode];
+	if(pageCrossed)
+	{
+		cycles += instructionPageCrossedCycles[opcode];
+		pageCrossed = false;
+	}
 	incrementPC(opcode);
 }
 

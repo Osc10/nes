@@ -17,6 +17,8 @@ private:
 	CPUMemory *memory;
 	uint8_t A; // Accumulator
 	uint8_t X, Y; // Index Registers
+	int totalCycles = 0;
+	int cycles = 0;
 
 	// Processor Status Flags
 	// N V - B D I Z C
@@ -45,6 +47,10 @@ private:
 	void pushToStack16(uint16_t val);
 	uint8_t pullFromStack();
 	uint16_t pullFromStack16();
+	void addBranchCycles(uint16_t address, uint16_t programCounter);
+	bool pageCross(uint16_t addr1, uint16_t addr2);
+
+	bool pageCrossed = false;
 
 	void readOpcode();
 	void incrementPC(uint8_t opcode);
