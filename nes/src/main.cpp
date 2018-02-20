@@ -6,7 +6,7 @@ int main()
 	//"../test.nes"
 	Emulator emu(filePath);
 
+	//emu.run();
+	//emu.printPPUMemory();
 
-	emu.run();
-	emu.printPPUMemory();
 }

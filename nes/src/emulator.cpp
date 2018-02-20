@@ -1,7 +1,8 @@
 #include "emulator.h"
 
 Emulator::Emulator(string filePath)
-	: cpumem(CPUMemory()), ppumem(PPUMemory()), cpu(CPU(&cpumem)), ppu(PPU(&ppumem)), rom(ines())
+	: cpumem(CPUMemory()), ppumem(PPUMemory()), cpu(CPU(&cpumem)), ppu(PPU(&ppumem)), rom(ines()),
+			screen(Screen(&ppu))
 {
     cpumem.setPPUMemory(&ppumem);
     rom.load(filePath, &cpumem, &ppumem);

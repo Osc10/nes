@@ -11,13 +11,14 @@ public:
 	uint8_t readRegister(uint16_t address);
 	void writeRegister(uint16_t address, uint8_t val);
 	void executeInstruction();
+	uint32_t pixels[256*240];
 
 private:
+	PPUMemory *memory;
 	int totalCycles = 0;
 	int scanline = -1;
 	int cycle = 0;
 
-	PPUMemory *memory;
 
 	//Shift registers - Contains bitmap data for two tiles. 
 	uint16_t shiftA16;

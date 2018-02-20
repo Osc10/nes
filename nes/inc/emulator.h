@@ -1,3 +1,7 @@
+#ifndef EMULATOR_H
+#define EMULATOR_H
+
+#include "screen.h"
 #include "ines.h"
 #include "memory.h"
 #include "cpu.h"
@@ -18,4 +22,7 @@ private:
 	CPU cpu;
 	PPU ppu;
 	ines rom;
+	Screen screen;
 };
+
+#endif
