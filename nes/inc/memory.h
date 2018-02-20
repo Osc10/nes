@@ -26,12 +26,12 @@ public:
 	uint8_t OAMDMA;
 	uint8_t ppuRegisters[0x8];
 	void printMemory();
+	uint8_t patternTables[0x2000];
 
 private:
 	PPU *ppu;
 	uint8_t palettes[0x20];
 	uint8_t nameTables[0x1000];
-	uint8_t patternTables[0x2000];
 };
 
 class CPUMemory: public Memory

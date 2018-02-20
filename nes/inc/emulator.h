@@ -18,6 +18,4 @@ private:
 	CPU cpu;
 	PPU ppu;
 	ines rom;
-
-	void renderFrame();
 };

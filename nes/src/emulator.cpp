@@ -4,20 +4,16 @@ Emulator::Emulator(string filePath)
 	: cpumem(CPUMemory()), ppumem(PPUMemory()), cpu(CPU(&cpumem)), ppu(PPU(&ppumem)), rom(ines())
 {
     cpumem.setPPUMemory(&ppumem);
-    rom.load(filePath, &cpumem);
+    rom.load(filePath, &cpumem, &ppumem);
 
     cpu.initialize();
 }
 
 void Emulator::run()
 {
-	for(int i = 0; i != 60; ++i)
-		renderFrame();	
-}
+	//while(true)
 
-void Emulator::renderFrame()
-{
-	for(int i = 0; i != 10000; ++i)
+	for(int i = 0; i < 300000; ++i)
 	{
 		cpu.executeInstruction();
 		ppu.executeInstruction();
@@ -25,5 +21,6 @@ void Emulator::renderFrame()
 		ppu.executeInstruction();
 	}
 }
+
 
 

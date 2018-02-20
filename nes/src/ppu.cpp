@@ -52,43 +52,49 @@ void PPU::writeRegister(uint16_t address, uint8_t val)
 	}
 }
 
-//void readPPUCTRL()
-//{
-//	uint8_t flags = cpu->read(0x2000);
-//	uint8_t nameTableSelect = flags & 0x3;
-//	switch(nameTableSelect)
-//	{
-//		case 0x0:
-//			nameTableAddress = 0x2000;
-//			break;
-//		case 0x1:
-//			nameTableAddress = 0x2400;
-//			break;
-//		case 0x2:
-//			nameTableAddress = 0x2800;
-//			break;
-//		case 0x3:
-//			nameTableAddress = 0x2C00;
-//			break;
-//	}
-//	incrementModeFlag = (flags & (1 << 2)) >> 2;
-//	spritePatternTableAddress = ((flags & (1 << 3)) == 0) ? 0x0000 : 0x1000;
-//	backgroundPatternTableAddress = ((flags & (1 << 4)) == 0) ? 0x0000 : 0x1000;
-//	spriteHeightFlag = (flags & (1 << 5)) >> 5;
-//	ppuMasterSlaveFlag = (flags & (1 << 6)) >> 6;
-//	nmiEnableFlag = (flags & (1 << 7)) >> 7;
-//}
-
-//void readPPUSTATUS()
-//{
-//	vblank = 0; //vblank cleared reading PPUSTATUS - placeholder implementation
-//}
-
-void PPU::writePPUSTATUS()
-{
-	memory->ppuRegisters[0x2] = (vblank << 7) | (sprite0Hit << 6) | (spriteOverflow << 5);
-}
-
 void PPU::executeInstruction()
 {
+	totalCycles++;
+	
+	if(scanline == -1 || scanline == 261)
+	{
+		// TODO:A cycle is skipped if an odd frame is rendered.
+		// TODO:Fill shift registers with data for the first two tiles of the next scanline.
+		// TODO:For cycles 280 - 304, vertical scroll bits are reloaded if rendering enabled.
+	}
+	else if(scanline < 240)
+	{
+		if(cycle == 0)
+		{
+			// Dummy cycle.
+		}
+		else if(cycle <= 256)
+		{
+		}
+		else if(cycle <= 320)
+		{
+		}
+		else if(cycle <= 336)
+		{
+		}
+		else // Cycles 337 - 340
+		{
+		}
+	}
+	else if (scanline == 240)
+	{
+		// Dummy scanline.
+	}
+	else // Scanlines 241 - 260, vblank lines where memory can be safely accessed.
+	{
+		if(scanline == 241 && cycle == 1) 
+		{
+			vblank = 1;
+			// TODO: vblank NMI occurs.
+		}
+	}
+
+	// There are 261 scanlines in one frame, and 341 cycles in each scanline.
+	cycle = (cycle + 1)%341;
+	scanline = (cycle != 0) ? scanline : ((scanline != 261) ? scanline + 1 : -1); 
 }

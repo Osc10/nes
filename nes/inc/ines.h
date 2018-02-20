@@ -10,16 +10,17 @@
 class ines
 {
 public:
-	void load(string path, CPUMemory *mem);
+	void load(string path, CPUMemory *mem, PPUMemory *ppumem);
 
 private:
 	uint8_t inesHeader[16]; 
 	ifstream inesFile;
 	string inesPath;
 	CPUMemory *memory;
+	PPUMemory *ppumemory;
 
 	void loadHeader();
-	void loadPrgRom();
+	void loadRom();
 };
 
 #endif

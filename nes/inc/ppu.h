@@ -13,20 +13,25 @@ public:
 	void executeInstruction();
 
 private:
-	int cycles = 0;
+	int totalCycles = 0;
+	int scanline = -1;
+	int cycle = 0;
+
 	PPUMemory *memory;
 
-	void writePPUSTATUS();
+	//Shift registers - Contains bitmap data for two tiles. 
+	uint16_t shiftA16;
+	uint16_t shiftB16;
 
     //$2000 - PPUCTRL
     //VPHB SINN
-    uint8_t nmiEnableFlag; //V - Generate NMI at start of VBLANK, 0:off, 1:on
-    uint8_t ppuMasterSlaveFlag; //P - 0:Read backdrop from EXT pins, 1:Output colour on EXT pins
-    uint8_t spriteHeightFlag; //H - 0:8x8, 1:8x16
-    uint16_t backgroundPatternTableAddress; //B 
-    uint16_t spritePatternTableAddress; //S 
+    //uint8_t nmiEnableFlag; //V - Generate NMI at start of VBLANK, 0:off, 1:on
+    //uint8_t ppuMasterSlaveFlag; //P - 0:Read backdrop from EXT pins, 1:Output colour on EXT pins
+    //uint8_t spriteHeightFlag; //H - 0:8x8, 1:8x16
+    //uint16_t backgroundPatternTableAddress; //B 
+    //uint16_t spritePatternTableAddress; //S 
     uint8_t incrementModeFlag; //I - 0:horizontal, 1:vertical
-    uint16_t nameTableAddress; //NN
+    //uint16_t nameTableAddress; //NN
 
     //$2001 - PPUMASK
     //BGRs bMmG
@@ -40,8 +45,8 @@ private:
     //$2002 - PPUSTATUS
     //VSO- ----
     uint8_t vblank; //V - 0:not in vblank, 1:in vblank
-    uint8_t sprite0Hit; //S 
-    uint8_t spriteOverflow; //O 
+    //uint8_t sprite0Hit; //S 
+    //uint8_t spriteOverflow; //O 
         
     //$2003 - OAMADDR
     //uint8_t oamAddress;
