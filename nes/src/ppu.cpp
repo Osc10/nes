@@ -24,10 +24,15 @@ uint8_t PPU::readRegister(uint16_t address)
 
 void PPU::writeRegister(uint16_t address, uint8_t val)
 {
-	//Does not write to $2000 in first 30000 cycles
+	// TODO: Does not write to $2000 in first 30000 cycles
 	memory->ppuRegisters[address & 0x7] = val;
 	switch(address & 0x7)
 	{
+		case 0x0:
+			nameTableAddress = 0x2000 + (val & 0x3)*0x400;
+			incrementModeFlag = (val & (1 << 2)) >> 2;
+			backgroundPatternTableAddress = ((val & (1 << 4)) == 0) ? 0x0000 : 0x1000;
+			break;
 		case 0x6:
 			if(ppuAddressLoaded == 0 || ppuAddressLoaded == 2)
 			{
@@ -56,7 +61,7 @@ void PPU::executeInstruction()
 {
 	totalCycles++;
 	
-	if(scanline == -1 || scanline == 261)
+	if(scanline == 261)
 	{
 		// TODO:A cycle is skipped if an odd frame is rendered.
 		// TODO:Fill shift registers with data for the first two tiles of the next scanline.
@@ -70,6 +75,19 @@ void PPU::executeInstruction()
 		}
 		else if(cycle <= 256)
 		{
+			// 2 cycles per memory access, and 4 bytes accessed per tile
+			if(cycle % 8 == 0)
+			{
+				int x = cycle/8 - 1;
+				int y = scanline/8;
+				nameTableByte = memory->read(nameTableAddress + x + y*32);
+				x = x/4;
+				y = y/4;
+				attributeTableByte = memory->read(nameTableAddress + 0x3C0 + x/4 + (y/4)*8);
+
+				drawTileBackground(x, y);
+			}
+
 		}
 		else if(cycle <= 320)
 		{
@@ -96,5 +114,10 @@ void PPU::executeInstruction()
 
 	// There are 261 scanlines in one frame, and 341 cycles in each scanline.
 	cycle = (cycle + 1)%341;
-	scanline = (cycle != 0) ? scanline : ((scanline != 261) ? scanline + 1 : -1); 
+	scanline = (cycle != 0) ? scanline : (scanline + 1)%262; 
+}
+
+void PPU::drawTileBackground(int x, int y)
+{
+
 }

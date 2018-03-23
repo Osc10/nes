@@ -19,6 +19,12 @@ private:
 	int scanline = -1;
 	int cycle = 0;
 
+	void drawTileBackground(int x, int y);
+
+	//Background
+	uint8_t nameTableByte;
+	uint8_t attributeTableByte;
+	uint16_t tileBitmap;
 
 	//Shift registers - Contains bitmap data for two tiles. 
 	uint16_t shiftA16;
@@ -29,10 +35,10 @@ private:
     //uint8_t nmiEnableFlag; //V - Generate NMI at start of VBLANK, 0:off, 1:on
     //uint8_t ppuMasterSlaveFlag; //P - 0:Read backdrop from EXT pins, 1:Output colour on EXT pins
     //uint8_t spriteHeightFlag; //H - 0:8x8, 1:8x16
-    //uint16_t backgroundPatternTableAddress; //B 
+    uint16_t backgroundPatternTableAddress; //B 
     //uint16_t spritePatternTableAddress; //S 
     uint8_t incrementModeFlag; //I - 0:horizontal, 1:vertical
-    //uint16_t nameTableAddress; //NN
+    uint16_t nameTableAddress; //NN
 
     //$2001 - PPUMASK
     //BGRs bMmG

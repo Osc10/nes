@@ -45,7 +45,7 @@ uint8_t PPUMemory::read(uint16_t address)
 	if(address < 0x2000)
 		return patternTables[address];
 	else if(address < 0x3F00)
-		return nameTables[address & 0x0FFF];
+		return nameTables[address & 0x0FFF]; // TODO: Implement different mirroring modes.
 	else
 		return palettes[address & 0x1F];
 }
