@@ -1,5 +1,108 @@
 #include "cpu.h"
+#include "ppu.h"
 
+//----------------------------------------------------------------------------------------------------
+// Flags
+//----------------------------------------------------------------------------------------------------
+inline void CPU::setZN(uint8_t val)
+{
+    Z = (val == 0) ? 1 : 0;
+    N = (val & 0x80) ? 1 : 0;
+}
+
+inline void CPU::setFlags(uint8_t val)
+{
+    C = val & 0x1;
+    Z = (val >> 1) & 0x1;
+    I = (val >> 2) & 0x1;
+    D = (val >> 3) & 0x1;
+    B = (val >> 4) & 0x1;
+    V = (val >> 6) & 0x1;
+    N = (val >> 7) & 0x1;
+}
+
+inline uint8_t CPU::readFlags()
+{
+    return (N << 7) | (V << 6) | (1 << 5) | (B << 4) | (D << 3) | (I << 2) | (Z << 1) | C;
+}
+
+//----------------------------------------------------------------------------------------------------
+// Memory
+//----------------------------------------------------------------------------------------------------
+uint8_t CPU::read(uint16_t address)
+{
+    if(address < 0x2000)
+        return ram[address & 0x7FF];
+    else if(address < 0x4020)
+    {
+        if(address < 0x4000)
+            ppu->readRegister(address);
+        else
+            return ioRegisters[address & 0x1F]; //Placeholder
+    }
+    else if(address < 0x6000)
+        return expansionROM[address & 0x1FFF]; //Placeholder
+    else if(address < 0x8000)
+        return sram[address & 0x1FFF]; //Placeholder
+    else
+        return programROM[address & 0x7FFF];
+}
+
+uint16_t CPU::read16(uint16_t address)
+{
+    return (uint16_t)read(address) | ((uint16_t)read(address + 1) << 8);
+}
+
+void CPU::write(uint16_t address, uint8_t val)
+{
+    if(address < 0x2000)
+        ram[address & 0x7FF] = val;
+    else if(address < 0x4020)
+    {
+        if(address < 0x4000)
+            ppu->writeRegister(address, val);
+        else
+            ioRegisters[address & 0x1F] = val;
+    }
+    else if(address < 0x6000)
+        expansionROM[address & 0x1FFF] = val;
+    else if(address < 0x8000)
+        sram[address & 0x1FFF] = val;
+    else
+        programROM[address & 0x7FFF] = val;
+}
+
+//----------------------------------------------------------------------------------------------------
+// Stack
+//----------------------------------------------------------------------------------------------------
+inline void CPU::push(uint8_t val)
+{
+    write(0x0100 + S, val);
+    --S;
+}
+
+inline void CPU::push16(uint16_t val)
+{
+    push((uint8_t)(val >> 8));
+    push((uint8_t)(val & 0xFF));
+}
+
+inline uint8_t CPU::pop()
+{
+    ++S;
+    return read(0x0100 + S);
+}
+
+inline uint16_t CPU::pop16()
+{
+    uint16_t low = (uint16_t)pop();
+    uint16_t high = (uint16_t)pop();
+    return low | (high << 8);
+}
+
+//----------------------------------------------------------------------------------------------------
+// Instructions
+//----------------------------------------------------------------------------------------------------
 enum addressingMode
 {
 	absolute,
@@ -17,8 +120,9 @@ enum addressingMode
 	zeroPageY
 };
 
-const uint8_t instructionMode[256] = {
-
+//Lookup table for the addressingMode of each opcode
+const uint8_t instructionMode[256] =
+{
 	5, 6, 5, 6, 10, 10, 10, 10, 5, 4, 3, 4, 0, 0, 0, 0,
 	9, 8, 5, 8, 11, 11, 11, 11, 5, 2, 5, 2, 1, 1, 1, 1,
 	0, 6, 5, 6, 10, 10, 10, 10, 5, 4, 3, 4, 0, 0, 0, 0,
@@ -35,11 +139,10 @@ const uint8_t instructionMode[256] = {
 	9, 8, 5, 8, 11, 11, 11, 11, 5, 2, 5, 2, 1, 1, 1, 1,
 	4, 6, 4, 6, 10, 10, 10, 10, 5, 4, 5, 4, 0, 0, 0, 0,
 	9, 8, 5, 8, 11, 11, 11, 11, 5, 2, 5, 2, 1, 1, 1, 1,
-
 };
 
-const uint8_t instructionSize[256] = {
-
+const uint8_t instructionSize[256] =
+{
 	1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
 	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
 	3, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
@@ -56,10 +159,10 @@ const uint8_t instructionSize[256] = {
 	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
 	2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
 	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
-
 };
 
-const string instructionName[256] = {
+const std::string instructionName[256] =
+{
 	"BRK", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO",
 	"PHP", "ORA", "ASL", "ANC", "NOP", "ORA", "ASL", "SLO",
 	"BPL", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO",
@@ -94,7 +197,8 @@ const string instructionName[256] = {
 	"SED", "SBC", "NOP", "ISC", "NOP", "SBC", "INC", "ISC"
 };
 
-const uint8_t instructionCycles[256] = {
+const uint8_t instructionCycles[256] =
+{
 	7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6,
 	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
 	6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 4, 4, 6, 6,
@@ -113,7 +217,9 @@ const uint8_t instructionCycles[256] = {
 	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
 };
 
-const uint8_t instructionPageCrossedCycles[256] = {
+//Certain instructions increase in cycle length if certain memory wrap arounds occur.
+const uint8_t instructionPageCrossedCycles[256] =
+{
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -132,87 +238,9 @@ const uint8_t instructionPageCrossedCycles[256] = {
 	1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
 };
 
-#define read16(address) (memory->read(address) | (memory->read(address + 1) << 8))
-
-void CPU::printLog(uint8_t opcode)
-{
-	++instructionNumber;
-	cout << dec << setfill(' ') << setw(4) << instructionNumber << ": ";
-	cout << hex << setw(4) << (int)PC << "  "; 
-	for(int i = 0; i < 3; ++i)
-	{
-		cout << setw(2);
-		if(i < instructionSize[opcode])
-			cout << setfill('0') << (int)memory->read(PC + i) << " ";
-		else
-			cout << "   ";
-	}
-	cout << setfill(' ') << setw(5) << instructionName[opcode];
-	cout << setw(10) << "A:" << setfill('0') << setw(2) << (int)A;
-	cout << setfill(' ') << setw(3) << "X:" << setfill('0') << setw(2) << (int)X;
-	cout << setfill(' ') << setw(3) << "Y:" << setfill('0') << setw(2) << (int)Y;
-	cout << setfill(' ') << setw(4) << "SP:" << setfill('0') << setw(2) << (int)S;
-	cout << setfill(' ') << setw(5) << "CYC:" << setfill(' ') << dec << setw(3) << ((totalCycles - 1) * 3) % 341;
-	cout << endl;
-}
-
-inline void CPU::setZN(uint8_t val)
-{
-	Z = (val == 0) ? 1 : 0;
-	N = (val & 0x80) ? 1 : 0;
-}
-
-inline void CPU::setFlags(uint8_t val)
-{
-	C = val & 0x1;
-	Z = (val >> 1) & 0x1;
-	I = (val >> 2) & 0x1;
-	D = (val >> 3) & 0x1;
-	B = (val >> 4) & 0x1;
-	V = (val >> 6) & 0x1;
-	N = (val >> 7) & 0x1;
-}
-
-inline uint8_t CPU::readFlags()
-{
-	return (N << 7) | (V << 6) | (1 << 5) | (B << 4) | (D << 3) | (I << 2) | (Z << 1) | C;
-}
-
 inline void CPU::readOpcode()
 {
-	opcode = memory->read(PC);	
-}
-
-inline void CPU::pushToStack(uint8_t val)
-{
-	memory->write(0x0100 + S, val);	
-	--S;
-}
-
-inline void CPU::pushToStack16(uint16_t val)
-{
-	pushToStack((uint8_t)(val >> 8));
-	pushToStack((uint8_t)(val & 0xFF));
-}
-
-inline uint8_t CPU::pullFromStack()
-{
-	++S;
-	return memory->read(0x0100 + S);
-}
-
-inline uint16_t CPU::pullFromStack16()
-{
-	uint16_t low = (uint16_t)pullFromStack();
-	uint16_t high = (uint16_t)pullFromStack();
-	return low | (high << 8);
-}
-
-inline uint8_t CPU::readStatus()
-{
-	uint8_t status = C | (Z << 1) | (I << 2) | (D << 3) |
-					 (B << 4) | (V << 6) | (N << 7);
-	return status;
+    opcode = read(PC);
 }
 
 inline bool CPU::pageCross(uint16_t addr1, uint16_t addr2)
@@ -223,9 +251,9 @@ inline bool CPU::pageCross(uint16_t addr1, uint16_t addr2)
 //Add 1 to cycle if branch succeeds, and add 2 if it branches to a new page
 inline void CPU::addBranchCycles(uint16_t address, uint16_t programCounter)
 {
-	++cycles;
+    ++remainingCycles;
 	if(pageCross(address, programCounter + 2))
-		++cycles;
+        ++remainingCycles;
 }
 
 uint16_t CPU::readCurrentAddress()
@@ -237,11 +265,11 @@ uint16_t CPU::readCurrentAddress()
 		case immediate:
 			return PC + 1;
 		case zeroPage:
-			return memory->read(PC + 1);
+            return read(PC + 1);
 		case zeroPageX:
-			return (X + memory->read(PC + 1)) & 0xFF;
+            return (X + read(PC + 1)) & 0xFF;
 		case zeroPageY:
-			return (Y + memory->read(PC + 1)) & 0xFF;
+            return (Y + read(PC + 1)) & 0xFF;
 		case absolute:
 			return read16(PC + 1); 
 		case absoluteX:
@@ -253,25 +281,25 @@ uint16_t CPU::readCurrentAddress()
 			pageCrossed = pageCross(addr, addr + Y);
 			return addr + Y;
 		case indirectIndexed:
-			offset = memory->read(PC + 1);
+            offset = read(PC + 1);
 			if(offset != 0xFF)
-				addr = read16(memory->read(PC + 1));
+                addr = read16(read(PC + 1));
 			else
-				addr = (memory->read(0) << 8) | memory->read(0xFF);
+                addr = (read(0) << 8) | read(0xFF);
 			pageCrossed = pageCross(addr, addr + Y);
 			return addr + Y;
 		case indexedIndirect:
-			offset = (X + memory->read(PC + 1)) & 0xFF;
+            offset = (X + read(PC + 1)) & 0xFF;
 			if(offset != 0xFF)	
 				return read16(offset);
 			else
-				return ((memory->read(0) << 8) | memory->read(0xFF));
+                return ((read(0) << 8) | read(0xFF));
 		case indirect:
 			addr = read16(PC + 1);
 			if((addr & 0xFF) != 0xFF)
 				return read16(read16(PC + 1));
 			else
-				return (memory->read(addr & 0xFF00) << 8) | memory->read(addr);
+                return (read(addr & 0xFF00) << 8) | read(addr);
 		default:
 			return 0;
 	}
@@ -279,59 +307,29 @@ uint16_t CPU::readCurrentAddress()
 
 uint8_t CPU::readCurrentMem()
 {
-	switch(instructionMode[opcode])
-	{
-		case accumulator:
-			return A;
-		case immediate:
-		case zeroPage:
-		case zeroPageX:
-		case zeroPageY:
-		case absolute:
-		case absoluteX:
-		case absoluteY:
-		case indirectIndexed:
-		case indexedIndirect:
-			return memory->read(readCurrentAddress());
-
-		default:
-			cerr << "Invalid opcode: " << hex << (int)opcode << dec << "\n";
-			return 1;
-	}
+    if(instructionMode[opcode] == accumulator)
+        return A;
+    else
+        return read(readCurrentAddress());
 }
 
 void CPU::writeCurrentMem(uint8_t val)
 {
-	switch(instructionMode[opcode])
-	{
-		case accumulator:
-			A = val;
-			break;
-		case immediate:
-		case zeroPage:
-		case zeroPageX:
-		case zeroPageY:
-		case absolute:
-		case absoluteX:
-		case absoluteY:
-		case indirectIndexed:
-		case indexedIndirect:
-			memory->write(readCurrentAddress(), val);
-			break;
-		default:
-			break;
-	}
+    if(instructionMode[opcode] == accumulator)
+        A = val;
+    else
+        write(readCurrentAddress(), val);
 }
 
-void CPU::executeInstruction()
+void CPU::executeCycle()
 {
 	totalCycles++;
-	cycles--;
-	if(cycles >= 0)
+    remainingCycles--;
+    if(remainingCycles >= 0)
 		return;
 
 	readOpcode();
-#ifdef NDEBUG
+#ifndef NDEBUG
 	printLog(opcode);
 #endif
 	switch(opcode)
@@ -341,19 +339,11 @@ void CPU::executeInstruction()
 		uint16_t address;
 
 		//ADC
-		case 0x69:
-		case 0x65:
-		case 0x75:
-		case 0x6D:
-		case 0x7D:
-		case 0x79:
-		case 0x61:
-		case 0x71:
+        case 0x69: case 0x65: case 0x75: case 0x6D: case 0x7D: case 0x79: case 0x61: case 0x71:
 			a = A;
 			b = readCurrentMem();
 			c = C;
-
-			sum = a + b + c;
+            sum = a + b + c;
 
 			A = sum & 0xFF;
 			C = ((sum >> 8) == 0) ? 0 : 1;
@@ -362,28 +352,16 @@ void CPU::executeInstruction()
 				V = 1;
 			else
 				V = 0;
-
-			break;
+            break;
 		
 		//AND
-		case 0x29:
-		case 0x25:
-		case 0x35:
-		case 0x2D:
-		case 0x3D:
-		case 0x39:
-		case 0x21:
-		case 0x31:
+        case 0x29: case 0x25: case 0x35: case 0x2D: case 0x3D: case 0x39: case 0x21: case 0x31:
 			A &= readCurrentMem();
 			setZN(A);
 			break;
 
 		//ASL
-		case 0x0A:
-		case 0x06:
-		case 0x16:
-		case 0x0E:
-		case 0x1E:
+        case 0x0A: case 0x06: case 0x16: case 0x0E: case 0x1E:
 			a = readCurrentMem();
 			C = (a & 0x80) >> 7;
 			a = a << 1;
@@ -395,7 +373,7 @@ void CPU::executeInstruction()
 		case 0x90:
 			if(C == 0)
 			{
-				address = PC + (int8_t)memory->read(PC + 1);
+                address = PC + (int8_t)read(PC + 1);
 				addBranchCycles(address, PC);
 				PC = address;
 			}
@@ -405,7 +383,7 @@ void CPU::executeInstruction()
 		case 0xB0:
 			if(C != 0)
 			{
-				address = PC + (int8_t)memory->read(PC + 1);
+                address = PC + (int8_t)read(PC + 1);
 				addBranchCycles(address, PC);
 				PC = address;
 			}
@@ -415,15 +393,14 @@ void CPU::executeInstruction()
 		case 0xF0:
 			if(Z != 0)
 			{
-				address = PC + (int8_t)memory->read(PC + 1);
+                address = PC + (int8_t)read(PC + 1);
 				addBranchCycles(address, PC);
 				PC = address;
 			}
 			break;
 
 		//BIT
-		case 0x24:
-		case 0x2C:
+        case 0x24: case 0x2C:
 			b = readCurrentMem();
 			Z = ((b & A) == 0) ? 1 : 0;
 			V = (b & 0x40) >> 6;
@@ -434,7 +411,7 @@ void CPU::executeInstruction()
 		case 0x30:
 			if(N != 0)
 			{
-				address = PC + (int8_t)memory->read(PC + 1);
+                address = PC + (int8_t)read(PC + 1);
 				addBranchCycles(address, PC);
 				PC = address;
 			}
@@ -444,7 +421,7 @@ void CPU::executeInstruction()
 		case 0xD0:
 			if(Z == 0)
 			{
-				address = PC + (int8_t)memory->read(PC + 1);
+                address = PC + (int8_t)read(PC + 1);
 				addBranchCycles(address, PC);
 				PC = address;
 			}
@@ -454,7 +431,7 @@ void CPU::executeInstruction()
 		case 0x10:
 			if(N == 0)
 			{
-				address = PC + (int8_t)memory->read(PC + 1);
+                address = PC + (int8_t)read(PC + 1);
 				addBranchCycles(address, PC);
 				PC = address;
 			}
@@ -464,7 +441,7 @@ void CPU::executeInstruction()
 		case 0x50:
 			if(V == 0)
 			{
-				address = PC + (int8_t)memory->read(PC + 1);
+                address = PC + (int8_t)read(PC + 1);
 				addBranchCycles(address, PC);
 				PC = address;
 			}
@@ -474,7 +451,7 @@ void CPU::executeInstruction()
 		case 0x70:
 			if(V != 0)
 			{
-				address = PC + (int8_t)memory->read(PC + 1);
+                address = PC + (int8_t)read(PC + 1);
 				addBranchCycles(address, PC);
 				PC = address;
 			}
@@ -496,42 +473,28 @@ void CPU::executeInstruction()
 			break;
 
 		//CMP
-		case 0xC9:
-		case 0xC5:
-		case 0xD5:
-		case 0xCD:
-		case 0xDD:
-		case 0xD9:
-		case 0xC1:
-		case 0xD1:
+        case 0xC9: case 0xC5: case 0xD5: case 0xCD: case 0xDD: case 0xD9: case 0xC1: case 0xD1:
 			b = readCurrentMem();
 			C = (A >= b) ? 1 : 0;
 			setZN(A - b);
 			break;
 
 		//CPX
-		case 0xE0:
-		case 0xE4:
-		case 0xEC:
+        case 0xE0: case 0xE4: case 0xEC:
 			b = readCurrentMem();
 			C = (X >= b) ? 1 : 0;
 			setZN(X - b);
 			break;
 
 		//CPY
-		case 0xC0:
-		case 0xC4:
-		case 0xCC:
+        case 0xC0: case 0xC4: case 0xCC:
 			b = readCurrentMem();
 			C = (Y >= b) ? 1 : 0;
 			setZN(Y - b);
 			break;
 
 		//DEC
-		case 0xC6:
-		case 0xD6:
-		case 0xCE:
-		case 0xDE:
+        case 0xC6: case 0xD6: case 0xCE: case 0xDE:
 			a = readCurrentMem() - 1;
 			setZN(a);
 			writeCurrentMem(a);
@@ -550,24 +513,14 @@ void CPU::executeInstruction()
 			break;
 
 		//EOR
-		case 0x49:
-		case 0x45:
-		case 0x55:
-		case 0x4D:
-		case 0x5D:
-		case 0x59:
-		case 0x41:
-		case 0x51:
+        case 0x49: case 0x45: case 0x55: case 0x4D: case 0x5D: case 0x59: case 0x41: case 0x51:
 			b = readCurrentMem();
 			A = A ^ b;
 			setZN(A);
 			break;
 
 		//INC
-		case 0xE6:
-		case 0xF6:
-		case 0xEE:
-		case 0xFE:
+        case 0xE6: case 0xF6: case 0xEE: case 0xFE:
 			a = readCurrentMem() + 1;
 			setZN(a);
 			writeCurrentMem(a);
@@ -586,56 +539,36 @@ void CPU::executeInstruction()
 			break;
 
 		//JMP
-		case 0x4C:
-		case 0x6C:
+        case 0x4C: case 0x6C:
 			PC = readCurrentAddress();
 			break;
 
 		//JSR
 		case 0x20:
-			pushToStack16(PC + 2);
+            push16(PC + 2);
 			PC = read16(PC + 1);
 			break;
 
 		//LDA
-		case 0xA9:
-		case 0xA5:
-		case 0xB5:
-		case 0xAD:
-		case 0xBD:
-		case 0xB9:
-		case 0xA1:
-		case 0xB1:
+        case 0xA9: case 0xA5: case 0xB5: case 0xAD: case 0xBD: case 0xB9: case 0xA1: case 0xB1:
 			A = readCurrentMem();
 			setZN(A);
 			break;
 
 		//LDX
-		case 0xA2:
-		case 0xA6:
-		case 0xB6:
-		case 0xAE:
-		case 0xBE:
+        case 0xA2: case 0xA6: case 0xB6: case 0xAE: case 0xBE:
 			X = readCurrentMem();
 			setZN(X);
 			break;
 
 		//LDY
-		case 0xA0:
-		case 0xA4:
-		case 0xB4:
-		case 0xAC:
-		case 0xBC:
+        case 0xA0: case 0xA4: case 0xB4: case 0xAC: case 0xBC:
 			Y = readCurrentMem();
 			setZN(Y);
 			break;
 
 		//LSR
-		case 0x4A:
-		case 0x46:
-		case 0x56:
-		case 0x4E:
-		case 0x5E:
+        case 0x4A: case 0x46: case 0x56: case 0x4E: case 0x5E:
 			a = readCurrentMem();
 			C = a & 0x1;
 			a = a >> 1;
@@ -648,45 +581,34 @@ void CPU::executeInstruction()
 			break;
 
 		//ORA
-		case 0x09:
-		case 0x05:
-		case 0x15:
-		case 0x0D:
-		case 0x1D:
-		case 0x19:
-		case 0x01:
-		case 0x11:
+        case 0x09: case 0x05: case 0x15: case 0x0D: case 0x1D: case 0x19: case 0x01: case 0x11:
 			A = A | readCurrentMem();
 			setZN(A);
 			break;
 
 		//PHA
 		case 0x48:
-			pushToStack(A);
+            push(A);
 			break;
 
 		//PHP
 		case 0x08:
-			pushToStack(readFlags() | 0x10);
+            push(readFlags() | 0x10);
 			break;
 
 		//PLA
 		case 0x68:
-			A = pullFromStack();
+            A = pop();
 			setZN(A);
 			break;	
 
 		//PLP
 		case 0x28:
-			setFlags(pullFromStack());
+            setFlags(pop());
 			break;
 
 		//ROL
-		case 0x2A:
-		case 0x26:
-		case 0x36:
-		case 0x2E:
-		case 0x3E:
+        case 0x2A: case 0x26: case 0x36: case 0x2E: case 0x3E:
 			a = readCurrentMem();
 			c = a & (1 << 7);
 			a = (a << 1) | C;
@@ -696,11 +618,7 @@ void CPU::executeInstruction()
 			break;
 
 		//ROR
-		case 0x6A:
-		case 0x66:
-		case 0x76:
-		case 0x6E:
-		case 0x7E:
+        case 0x6A: case 0x66: case 0x76: case 0x6E: case 0x7E:
 			a = readCurrentMem();
 			c = a & 0x1;
 			a = (a >> 1) | (C << 7);
@@ -711,24 +629,17 @@ void CPU::executeInstruction()
 
 		//RTI
 		case 0x40:
-			setFlags(pullFromStack());
-			PC = pullFromStack16();
+            setFlags(pop());
+            PC = pop16();
 			break;
 
 		//RTS
 		case 0x60:
-			PC = pullFromStack16() + 1;
+            PC = pop16() + 1;
 			break;
 
 		//SBC
-		case 0xE9:
-		case 0xE5:
-		case 0xF5:
-		case 0xED:
-		case 0xFD:
-		case 0xF9:
-		case 0xE1:
-		case 0xF1:
+        case 0xE9: case 0xE5: case 0xF5: case 0xED: case 0xFD: case 0xF9: case 0xE1: case 0xF1:
 			a = A;
 			b = readCurrentMem();
 			c = C;
@@ -760,27 +671,17 @@ void CPU::executeInstruction()
 			break;
 
 		//STA
-		case 0x85:
-		case 0x95:
-		case 0x8D:
-		case 0x9D:
-		case 0x99:
-		case 0x81:
-		case 0x91:
+        case 0x85: case 0x95: case 0x8D: case 0x9D: case 0x99: case 0x81: case 0x91:
 			writeCurrentMem(A);
 			break;
 
 		//STX
-		case 0x86:
-		case 0x96:
-		case 0x8E:
+        case 0x86: case 0x96: case 0x8E:
 			writeCurrentMem(X);
 			break;
 
 		//STY
-		case 0x84:
-		case 0x94:
-		case 0x8C:
+        case 0x84: case 0x94: case 0x8C:
 			writeCurrentMem(Y);
 			break;
 			
@@ -820,15 +721,15 @@ void CPU::executeInstruction()
 			break;
 
 		default:
-			cerr << "Attempted to execute invalid opcode! \n";
+            std::cerr << "Attempted to execute invalid opcode! \n";
 			exit(0); // Remove
 
 	}
 
-	cycles += instructionCycles[opcode];
+    remainingCycles += instructionCycles[opcode];
 	if(pageCrossed)
 	{
-		cycles += instructionPageCrossedCycles[opcode];
+        remainingCycles += instructionPageCrossedCycles[opcode];
 		pageCrossed = false;
 	}
 	incrementPC(opcode);
@@ -837,12 +738,8 @@ void CPU::executeInstruction()
 void CPU::incrementPC(uint8_t opcode)
 {
 	switch(opcode)
-	{
-		case 0x40:
-		case 0x4C:
-		case 0x20:
-		case 0x60:
-		case 0x6C:
+    {
+        case 0x40: case 0x4C: case 0x20: case 0x60: case 0x6C:
 			break;
 
 		default:
@@ -852,21 +749,34 @@ void CPU::incrementPC(uint8_t opcode)
 
 void CPU::initialize()
 {
-	if(!memory->isLoaded)
-		cerr << "CPU running while memory has not been initialized!\n";
-
-	S = 0xFD; 
+    S = 0xFD;
 	PC = read16(0xFFFC);
 	//PC = 0xC000; // Automating nestest
 }
 
-void CPU::run()
+void CPU::loadPRGROM(std::ifstream *inesFile, int size, int offset)
 {
-	initialize();
-
-	while(true)
-	{
-		executeInstruction();
-	}
+    inesFile->read((char*)(programROM + offset), size);
 }
 
+void CPU::printLog(uint8_t opcode)
+{
+    ++instructionNumber;
+    std::cout << std::dec << std::setfill(' ') << std::setw(4) << instructionNumber << ": ";
+    std::cout << std::hex << std::setw(4) << (int)PC << "  ";
+    for(int i = 0; i < 3; ++i)
+    {
+        std::cout << std::setw(2);
+        if(i < instructionSize[opcode])
+            std::cout << std::setfill('0') << (int)read(PC + i) << " ";
+        else
+            std::cout << "   ";
+    }
+    std::cout << std::setfill(' ') << std::setw(5) << instructionName[opcode];
+    std::cout << std::setw(10) << "A:" << std::setfill('0') << std::setw(2) << (int)A;
+    std::cout << std::setfill(' ') << std::setw(3) << "X:" << std::setfill('0') << std::setw(2) << (int)X;
+    std::cout << std::setfill(' ') << std::setw(3) << "Y:" << std::setfill('0') << std::setw(2) << (int)Y;
+    std::cout << std::setfill(' ') << std::setw(4) << "SP:" << std::setfill('0') << std::setw(2) << (int)S;
+    std::cout << std::setfill(' ') << std::setw(5) << "CYC:" << std::setfill(' ') << std::dec << std::setw(3) << ((totalCycles - 1) * 3) % 341;
+    std::cout << std::endl;
+}

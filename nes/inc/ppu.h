@@ -1,20 +1,26 @@
 #ifndef PPU_H
 #define PPU_H
 
-#include "console.h"
-#include "memory.h"
+#include <fstream>
 
 class PPU
 {
 public:
-	PPU(PPUMemory *mem) : memory(mem) { memory->setPPU(*this); }
-	uint8_t readRegister(uint16_t address);
+    uint8_t readRegister(uint16_t address);
 	void writeRegister(uint16_t address, uint8_t val);
-	void executeInstruction();
-	uint32_t pixels[256*240];
+    void executeCycle();
+    void loadPatternTables(std::ifstream *inesFile, int size, int offset);
 
+    void printMemory(); //Helper function to print state of PPU memory.
 private:
-	PPUMemory *memory;
+    //Memory
+    uint8_t ppuRegisters[0x8];
+    uint8_t palettes[0x20];
+    uint8_t nameTables[0x1000];
+    uint8_t patternTables[0x2000];
+    uint8_t read(uint16_t address);
+    void write(uint16_t address, uint8_t val);
+
 	int totalCycles = 0;
 	int scanline = -1;
 	int cycle = 0;
@@ -29,6 +35,8 @@ private:
 	//Shift registers - Contains bitmap data for two tiles. 
 	uint16_t shiftA16;
 	uint16_t shiftB16;
+
+    //Register Flags
 
     //$2000 - PPUCTRL
     //VPHB SINN

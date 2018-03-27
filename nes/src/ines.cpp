@@ -1,19 +1,17 @@
 #include "ines.h"
 
-void ines::load(string path, CPUMemory *mem, PPUMemory *ppumem)
+void ines::load(std::string path, CPU *c, PPU *p)
 {
 	inesPath = path;
-	memory = mem;
-	ppumemory = ppumem;
-	inesFile.open(inesPath, ios::binary);
+    cpu = c;
+    ppu = p;
+    inesFile.open(inesPath, std::ios::binary);
 
 	if(!inesFile.is_open())
-		cerr << "Invalid path to .nes file: " << inesPath << "\n";
+        std::cerr << "Invalid path to .nes file: " << inesPath << "\n";
 
 	loadHeader();
 	loadRom();
-
-	memory->isLoaded = true;
 
 	inesFile.close();	
 }
@@ -22,7 +20,7 @@ void ines::loadHeader()
 {
 	inesFile.read((char*)inesHeader, 16);
 	if(!inesFile)
-		cerr << "Failed to read .nes header!\n";
+        std::cerr << "Failed to read .nes header!\n";
 }
 
 void ines::loadRom()
@@ -33,37 +31,31 @@ void ines::loadRom()
 
 	inesFile.seekg(trainerOffset);
 
-	if(sizeOfPrgRom == 1)
+    //If sizeOfPrgRom == 1, the memory is mirrored and loaded in twice.
+    if(sizeOfPrgRom == 1)
 	{
-		inesFile.read((char*)(memory->programROM), 16384);
+        cpu->loadPRGROM(&inesFile, 16384, 0);
 		if(!inesFile)
-		{
-			cerr << "Failed to read program ROM (mirror 1)!\n";
-			cerr << "Only " << inesFile.gcount() << " could be read.\n";
-		}
+            std::cerr << "Failed to read program ROM (mirror 1)!\n";
 		inesFile.seekg(trainerOffset);
-		inesFile.read((char*)(&memory->programROM[0x4000]), 16384);
+        cpu->loadPRGROM(&inesFile, 16384, 0x4000);
 		if(!inesFile)
-		{
-			cerr << "Failed to read program ROM (mirror 2)!\n";
-			cerr << "Only " << inesFile.gcount() << " could be read.\n";
-		}
+            std::cerr << "Failed to read program ROM (mirror 2)!\n";
 	}
 	else
 	{
-		inesFile.read((char*)(memory->programROM), 32768);
+        cpu->loadPRGROM(&inesFile, 32768, 0);
 		if(!inesFile)
-			cerr << "Failed to read program ROM!\n";
+            std::cerr << "Failed to read program ROM!\n";
 	}
 
-	
 	//Loading CHR ROM (PPU memory, contains the pattern tables)
 	uint8_t sizeOfChrRom = inesHeader[5]; // Size in 8KB units
 	int offset = trainerOffset + 16384*sizeOfPrgRom;
 	if(sizeOfChrRom == 0)
 	{
-#ifdef NDEBUG
-		cout << "Using CHR RAM instead." << endl;
+#ifndef NDEBUG
+        std::cout << "Using CHR RAM instead." << std::endl;
 #endif
 		// TODO: Implement CHR RAM.
 	}
@@ -74,8 +66,8 @@ void ines::loadRom()
 	else
 	{
 		inesFile.seekg(offset);
-		inesFile.read((char*)(ppumemory->patternTables), 8192);
+        ppu->loadPatternTables(&inesFile, 8192, 0);
 		if(!inesFile)
-			cerr << "Failed to CHR ROM!\n";
+            std::cerr << "Failed to read CHR ROM!\n";
 	}
 } 

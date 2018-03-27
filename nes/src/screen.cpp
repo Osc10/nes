@@ -3,7 +3,7 @@
 static const int SCREEN_WIDTH = 256;
 static const int SCREEN_HEIGHT = 224;
 
-Screen::Screen(PPU *consolePPU) : ppu(consolePPU)
+Screen::Screen(PPU *p) : ppu(p)
 {
 	if(SDL_Init(SDL_INIT_VIDEO) != 0)
 		cout << "SDL failed to initialize. SDL Error: " << SDL_GetError() << endl; 

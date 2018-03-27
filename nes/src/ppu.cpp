@@ -3,7 +3,7 @@
 
 uint8_t PPU::readRegister(uint16_t address)
 {
-	uint8_t reg = memory->ppuRegisters[address & 0x7];
+    uint8_t reg = ppuRegisters[address & 0x7];
 	
 	switch(address & 0x7)
 	{
@@ -25,7 +25,7 @@ uint8_t PPU::readRegister(uint16_t address)
 void PPU::writeRegister(uint16_t address, uint8_t val)
 {
 	// TODO: Does not write to $2000 in first 30000 cycles
-	memory->ppuRegisters[address & 0x7] = val;
+    ppuRegisters[address & 0x7] = val;
 	switch(address & 0x7)
 	{
 		case 0x0:
@@ -48,7 +48,7 @@ void PPU::writeRegister(uint16_t address, uint8_t val)
 		case 0x7:
 			if(ppuAddressLoaded == 2)
 			{
-				memory->write(ppuAddress, val);
+                write(ppuAddress, val);
 				ppuAddress = (incrementModeFlag == 0) ? ppuAddress + 1 : ppuAddress + 32;
 			}
 			break;
@@ -57,7 +57,29 @@ void PPU::writeRegister(uint16_t address, uint8_t val)
 	}
 }
 
-void PPU::executeInstruction()
+uint8_t PPU::read(uint16_t address)
+{
+    address = address & 0x3FFF;
+    if(address < 0x2000)
+        return patternTables[address];
+    else if(address < 0x3F00)
+        return nameTables[address & 0x0FFF]; // TODO: Implement different mirroring modes.
+    else
+        return palettes[address & 0x1F];
+}
+
+void PPU::write(uint16_t address, uint8_t val)
+{
+    address = address & 0x3FFF;
+    if(address < 0x2000)
+        patternTables[address] = val;
+    else if(address < 0x3F00)
+        nameTables[address & 0x0FFF] = val;
+    else
+        palettes[address & 0x1F] = val;
+}
+
+void PPU::executeCycle()
 {
 	totalCycles++;
 	
@@ -80,14 +102,11 @@ void PPU::executeInstruction()
 			{
 				int x = cycle/8 - 1;
 				int y = scanline/8;
-				nameTableByte = memory->read(nameTableAddress + x + y*32);
+                nameTableByte = read(nameTableAddress + x + y*32);
 				x = x/4;
 				y = y/4;
-				attributeTableByte = memory->read(nameTableAddress + 0x3C0 + x/4 + (y/4)*8);
-
-				drawTileBackground(x, y);
-			}
-
+                attributeTableByte = read(nameTableAddress + 0x3C0 + x/4 + (y/4)*8);
+            }
 		}
 		else if(cycle <= 320)
 		{
@@ -117,7 +136,22 @@ void PPU::executeInstruction()
 	scanline = (cycle != 0) ? scanline : (scanline + 1)%262; 
 }
 
-void PPU::drawTileBackground(int x, int y)
+void PPU::loadPatternTables(std::ifstream *inesFile, int size, int offset)
 {
-
+    inesFile->read((char*)(patternTables + offset), size);
 }
+
+void PPU::printMemory()
+{
+    for(int i = 0; i < 0x400; ++i)
+    {
+        std::cout << std::hex << std::setfill('0') << std::setw(4) << (int)i*16 << ": ";
+        for(int j = 0; j < 16; ++j)
+        {
+            std::cout << std::hex << std::setfill('0') << std::setw(2) << (int)read(16 * i + j) << " ";
+        }
+        std::cout << std::dec << std::endl;
+    }
+}
+
+

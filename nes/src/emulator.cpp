@@ -1,11 +1,10 @@
 #include "emulator.h"
 
 Emulator::Emulator(string filePath)
-	: cpumem(CPUMemory()), ppumem(PPUMemory()), cpu(CPU(&cpumem)), ppu(PPU(&ppumem)), rom(ines()),
-			screen(Screen(&ppu))
+    : cpu(CPU()), ppu(PPU()), rom(ines()), screen(Screen(&ppu))
 {
-    cpumem.setPPUMemory(&ppumem);
-    rom.load(filePath, &cpumem, &ppumem);
+    cpu.linkPPU(&ppu);
+    rom.load(filePath, &cpu, &ppu);
 
     cpu.initialize();
 }
@@ -16,10 +15,7 @@ void Emulator::run()
 
 	for(int i = 0; i < 300000; ++i)
 	{
-		cpu.executeInstruction();
-		ppu.executeInstruction();
-		ppu.executeInstruction();
-		ppu.executeInstruction();
+        cpu.executeCycle();
 	}
 }
 

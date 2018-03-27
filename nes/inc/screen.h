@@ -9,7 +9,7 @@ using namespace std;
 class Screen
 {
 public:
-	Screen(PPU *consolePPU);
+    Screen(PPU *p);
 	~Screen();
 
 private:

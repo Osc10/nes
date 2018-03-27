@@ -10,17 +10,15 @@ set(NES_SRC
 	"${SRC_ROOT}/src/ines.cpp"
 	"${SRC_ROOT}/src/emulator.cpp"
 	"${SRC_ROOT}/src/screen.cpp"
-	"${SRC_ROOT}/src/memory.cpp"
 	"${SRC_ROOT}/src/main.cpp"
 )
 
 set(NES_COMPILE_FLAGS
-	-std=c++11
+        -std=c++17
 	-g
 	-pedantic
 	-Wall
 	-Wextra
-	-DNDEBUG
 )
 
 find_package(SDL2 REQUIRED)
