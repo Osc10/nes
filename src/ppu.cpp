@@ -2,7 +2,7 @@
 #include "cpu.h"
 
 //----------------------------------------------------------------------------------------------------
-// Memory
+// PPU Memory
 //----------------------------------------------------------------------------------------------------
 uint8_t PPU::read(uint16_t address)
 {
@@ -26,6 +26,14 @@ void PPU::write(uint16_t address, uint8_t val)
         palettes[address & 0x1F] = val;
 }
 
+void PPU::loadPatternTables(std::ifstream *inesFile, int size, int offset)
+{
+    inesFile->read((char*)(patternTables + offset), size);
+}
+
+//----------------------------------------------------------------------------------------------------
+// IO Registers
+//----------------------------------------------------------------------------------------------------
 uint8_t PPU::readRegister(uint16_t address)
 {
     if(address == 0x4014)
@@ -106,7 +114,11 @@ void PPU::writePPUCTRL(uint8_t val)
 //$2001
 void PPU::writePPUMASK(uint8_t val)
 {
-
+    greyscale = val & 0x1;
+    showBackgroundLeft = val & (1 << 1);
+    showSpritesLeft = val & (1 << 2);
+    showBackground = val & (1 << 3);
+    showSprites = val & (1 << 4);
 }
 
 //$2002
@@ -199,73 +211,47 @@ void PPU::writeOAMDMA(uint8_t val)
 
 }
 
+//----------------------------------------------------------------------------------------------------
+// Rendering
+//----------------------------------------------------------------------------------------------------
+void PPU::tick()
+{
+    cycle++;
 
-
-
-
+    //Odd frames are one cycle shorter with rendering enabled
+    if(cycle == 340 && scanline == 261 && f == 1 && (showBackground || showSprites))
+    {
+        cycle = 0;
+        scanline = 0;
+        frame++;
+        f ^= 1;
+    }
+    else if(cycle > 340)
+    {
+        cycle = 0;
+        scanline++;
+        if(scanline > 261)
+        {
+            scanline = 0;
+            frame++;
+            f ^= 1;
+        }
+    }
+}
 
 void PPU::executeCycle()
 {
-	totalCycles++;
-	
-	if(scanline == 261)
-	{
-		// TODO:A cycle is skipped if an odd frame is rendered.
-		// TODO:Fill shift registers with data for the first two tiles of the next scanline.
-		// TODO:For cycles 280 - 304, vertical scroll bits are reloaded if rendering enabled.
-	}
-	else if(scanline < 240)
-	{
-		if(cycle == 0)
-		{
-			// Dummy cycle.
-		}
-		else if(cycle <= 256)
-		{
-			// 2 cycles per memory access, and 4 bytes accessed per tile
-			if(cycle % 8 == 0)
-			{
-				int x = cycle/8 - 1;
-				int y = scanline/8;
-                nameTableByte = read(nameTableAddress + x + y*32);
-				x = x/4;
-				y = y/4;
-                attributeTableByte = read(nameTableAddress + 0x3C0 + x/4 + (y/4)*8);
-            }
-		}
-		else if(cycle <= 320)
-		{
-		}
-		else if(cycle <= 336)
-		{
-		}
-		else // Cycles 337 - 340
-		{
-		}
-	}
-	else if (scanline == 240)
-	{
-		// Dummy scanline.
-	}
-	else // Scanlines 241 - 260, vblank lines where memory can be safely accessed.
-	{
-		if(scanline == 241 && cycle == 1) 
-		{
-			vblank = 1;
-			// TODO: vblank NMI occurs.
-		}
-	}
+    tick();
 
-	// There are 261 scanlines in one frame, and 341 cycles in each scanline.
-	cycle = (cycle + 1)%341;
-	scanline = (cycle != 0) ? scanline : (scanline + 1)%262; 
+    if(showBackground)
+    {
+
+    }
 }
 
-void PPU::loadPatternTables(std::ifstream *inesFile, int size, int offset)
-{
-    inesFile->read((char*)(patternTables + offset), size);
-}
-
+//----------------------------------------------------------------------------------------------------
+// Other
+//----------------------------------------------------------------------------------------------------
 void PPU::printMemory()
 {
     for(int i = 0; i < 0x400; ++i)

@@ -48,8 +48,10 @@ private:
 
     //Instructions
     uint8_t opcode;
-    int instructionNumber = 0;
-    int totalCycles = 0;
+    uint64_t instructionNumber = 0;
+#ifndef NDEBUG
+    uint64_t totalCycles = 0;
+#endif
     int remainingCycles = 0;
     bool pageCrossed = false;
     uint16_t readCurrentAddress(); //Each instruction has an associated addressing mode.
