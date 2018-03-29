@@ -16,6 +16,8 @@ public:
     void initialize();
     void linkPPU(PPU *p) {ppu = p;}
     void loadPRGROM(std::ifstream *inesFile, int size, int offset);
+    void setNMI(bool flag) {nmiFlag = flag;}
+    void setIRQ(bool flag) {irqFlag = flag;}
 private:
     //Registers and Flags
     uint8_t A; //Accumulator
@@ -23,7 +25,7 @@ private:
     uint8_t S; // Stack Pointer
     uint16_t PC; // Program Counter
     uint8_t N, V, B, D, I, Z, C; //Position: N V - B D I Z C
-        //Carry Flag, Zero Flag, Interrupt Disable, Decimal Mode, Break Command, Overflow Flag, Negative Flag
+    //Negative Flag, Overflow Flag, Break Command, Decimal Mode, Interrupt Disable, Zero Flag, Carry Flag
     void setZN(uint8_t val);
     void setFlags(uint8_t val);
     uint8_t readFlags();
@@ -59,6 +61,12 @@ private:
     void incrementPC(uint8_t opcode);
     void addBranchCycles(uint16_t address, uint16_t programCounter);
     bool pageCross(uint16_t addr1, uint16_t addr2);
+
+    //Interrupts
+    bool nmiFlag; //TODO: Set initial state.
+    void nmi();
+    bool irqFlag; //TODO: Set initial state.
+    void irq();
 
     //Helper functions
     void printLog(uint8_t opcode);

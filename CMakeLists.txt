@@ -1,7 +1,7 @@
 project (nes)
 cmake_minimum_required (VERSION 2.6)
 
-set(SRC_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/nes)
+set(SRC_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(NES_INC "${SRC_ROOT}/inc/")
 set(NES_SRC

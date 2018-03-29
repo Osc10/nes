@@ -35,7 +35,7 @@ uint8_t CPU::read(uint16_t address)
         return ram[address & 0x7FF];
     else if(address < 0x4020)
     {
-        if(address < 0x4000)
+        if(address < 0x4000 || address == 0x4014)
             ppu->readRegister(address);
         else
             return ioRegisters[address & 0x1F]; //Placeholder
@@ -59,7 +59,7 @@ void CPU::write(uint16_t address, uint8_t val)
         ram[address & 0x7FF] = val;
     else if(address < 0x4020)
     {
-        if(address < 0x4000)
+        if(address < 0x4000 || address == 0x4014)
             ppu->writeRegister(address, val);
         else
             ioRegisters[address & 0x1F] = val;
@@ -70,6 +70,11 @@ void CPU::write(uint16_t address, uint8_t val)
         sram[address & 0x1FFF] = val;
     else
         programROM[address & 0x7FFF] = val;
+}
+
+void CPU::loadPRGROM(std::ifstream *inesFile, int size, int offset)
+{
+    inesFile->read((char*)(programROM + offset), size);
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -121,7 +126,7 @@ enum addressingMode
 };
 
 //Lookup table for the addressingMode of each opcode
-const uint8_t instructionMode[256] =
+constexpr uint8_t instructionMode[256] =
 {
 	5, 6, 5, 6, 10, 10, 10, 10, 5, 4, 3, 4, 0, 0, 0, 0,
 	9, 8, 5, 8, 11, 11, 11, 11, 5, 2, 5, 2, 1, 1, 1, 1,
@@ -141,7 +146,7 @@ const uint8_t instructionMode[256] =
 	9, 8, 5, 8, 11, 11, 11, 11, 5, 2, 5, 2, 1, 1, 1, 1,
 };
 
-const uint8_t instructionSize[256] =
+constexpr uint8_t instructionSize[256] =
 {
 	1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
 	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
@@ -197,7 +202,7 @@ const std::string instructionName[256] =
 	"SED", "SBC", "NOP", "ISC", "NOP", "SBC", "INC", "ISC"
 };
 
-const uint8_t instructionCycles[256] =
+constexpr uint8_t instructionCycles[256] =
 {
 	7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6,
 	2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,
@@ -218,7 +223,7 @@ const uint8_t instructionCycles[256] =
 };
 
 //Certain instructions increase in cycle length if certain memory wrap arounds occur.
-const uint8_t instructionPageCrossedCycles[256] =
+constexpr uint8_t instructionPageCrossedCycles[256] =
 {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
@@ -327,12 +332,18 @@ void CPU::executeCycle()
     remainingCycles--;
     if(remainingCycles >= 0)
 		return;
-
 	readOpcode();
 #ifndef NDEBUG
 	printLog(opcode);
 #endif
-	switch(opcode)
+
+    //Interrupt handling
+    if(nmiFlag)
+        nmi();
+    else if(irqFlag && !I)
+        irq();
+
+    switch(opcode)
 	{
 		uint8_t a, b, c;
 		uint16_t sum;
@@ -436,6 +447,14 @@ void CPU::executeCycle()
 				PC = address;
 			}
 			break;
+
+        //BRK
+        case 0x00:
+            push16(PC + 2);
+            push(readFlags() | 0x04); //Set B to 1
+            I = 1;
+            PC = read16(0xFFFE);
+            break;
 
 		//BVC
 		case 0x50:
@@ -593,7 +612,7 @@ void CPU::executeCycle()
 
 		//PHP
 		case 0x08:
-            push(readFlags() | 0x10);
+            push(readFlags() | 0x10); //Set B to 1
 			break;
 
 		//PLA
@@ -739,7 +758,7 @@ void CPU::incrementPC(uint8_t opcode)
 {
 	switch(opcode)
     {
-        case 0x40: case 0x4C: case 0x20: case 0x60: case 0x6C:
+        case 0x00: case 0x40: case 0x4C: case 0x20: case 0x60: case 0x6C:
 			break;
 
 		default:
@@ -747,16 +766,36 @@ void CPU::incrementPC(uint8_t opcode)
 	}
 }
 
+//----------------------------------------------------------------------------------------------------
+// Interrupts
+//----------------------------------------------------------------------------------------------------
+void CPU::nmi()
+{
+    push16(PC);
+    push(readFlags());
+    I = 1; //Prevent further interrupts.
+    PC = read16(0xFFFA);
+    remainingCycles += 7;
+}
+
+void CPU::irq()
+{
+    push16(PC);
+    push(readFlags());
+    I = 1; //Prevent further interrupts.
+    PC = read16(0xFFFE);
+    remainingCycles += 7;
+}
+
+//----------------------------------------------------------------------------------------------------
+// Other
+//----------------------------------------------------------------------------------------------------
 void CPU::initialize()
 {
     S = 0xFD;
-	PC = read16(0xFFFC);
-	//PC = 0xC000; // Automating nestest
-}
-
-void CPU::loadPRGROM(std::ifstream *inesFile, int size, int offset)
-{
-    inesFile->read((char*)(programROM + offset), size);
+    setFlags(0x4); //IRQ disabled
+    PC = read16(0xFFFC);
+    //PC = 0xC000; // Automating nestest
 }
 
 void CPU::printLog(uint8_t opcode)

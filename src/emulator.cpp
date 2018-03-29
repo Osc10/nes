@@ -4,6 +4,7 @@ Emulator::Emulator(string filePath)
     : cpu(CPU()), ppu(PPU()), rom(ines()), screen(Screen(&ppu))
 {
     cpu.linkPPU(&ppu);
+    ppu.linkCPU(&cpu);
     rom.load(filePath, &cpu, &ppu);
 
     cpu.initialize();

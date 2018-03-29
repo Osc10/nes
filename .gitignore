@@ -8,3 +8,5 @@ build/CMakeCache.txt
 build/cmake_install.cmake
 build/Makefile
 build/nes
+*.user
+*.autosave
