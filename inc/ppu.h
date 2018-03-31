@@ -6,6 +6,25 @@
 
 class CPU;
 
+//Mirroring modes of the nameTables at $2000, $2400, $2800, $2C00. Format is:
+// $2000, $2400
+// $2800, $2C00
+enum mirroringMode
+{
+    mirrorHorizontal, 	// A A
+                        // B B
+
+    mirrorVertical,   	// A B
+                        // A B
+
+    //TODO: implement mappers which can use the following mirroring modes:
+    mirrorSingleScreen, // A A
+                        // A A
+
+    mirrorFourScreen    // A B
+                        // C D
+};
+
 class PPU
 {
 public:
@@ -15,12 +34,15 @@ public:
     void loadPatternTables(std::ifstream *inesFile, int size, int offset);
     void printMemory(); //Helper function to print state of PPU memory.
     void linkCPU(CPU* c) {cpu = c;}
+    void setNameTableMirroring(mirroringMode val) {mode = val;}
 private:
     //VRAM
-    uint8_t ppuRegisters[0x8];
     uint8_t palettes[0x20];
     uint8_t nameTables[0x1000];
     uint8_t patternTables[0x2000];
+    uint8_t oamData[0x100];
+    mirroringMode mode;
+    uint16_t mirrorAddress(uint16_t addr);
     uint8_t read(uint16_t address);
     void write(uint16_t address, uint8_t val);
 
@@ -30,11 +52,15 @@ private:
     uint8_t x; //Fine X scroll (3 bits)
     uint8_t w = 0; //First or second write toggle, shared by PPUADDR and PPUSCROLL (1 bit)
     uint8_t f = 0; //Even or odd frame (1 bit)
+
+    //Data Latches
     uint8_t databus = 0;
+    uint8_t nameTableByte;
+    uint8_t attributeTableByte;
 
     //$2000 - PPUCTRL
     //VPHB SINN
-    uint16_t nametableAddress = 0x2000; //NN - 0: 0x2000, 1: 0x2400, 2: 0x2800, 3: 0x2C00
+    //NN - 0: 0x2000, 1: 0x2400, 2: 0x2800, 3: 0x2C00
     uint8_t addressIncrement = 1; //I - 0: add 1 (horizontal), 1: add 32 (vertical)
     uint16_t spritePatternTableAddress = 0x0000; //S - 0: 0x0000, 1: 0x1000. Ignored in 8x16 sprite mode
     uint16_t backgroundPatternTableAddress = 0x0000; //B - 0: 0x0000, 1: 0x1000.
@@ -54,7 +80,7 @@ private:
     //$2002 - PPUSTATUS
     bool spriteOverflow = true; //Set when >8 sprites appear on a single scanline.
     bool spriteZeroHit = false;
-    bool vblank = true;
+    bool vblank = true; //Flag switched on during vblank period.
     uint8_t readPPUSTATUS();
 
     //$2003 - OAMADDR
@@ -81,9 +107,17 @@ private:
     CPU *cpu;
 
     //Rendering
-    int cycle;
-    int scanline; // 341 cycles per scanline.
-    uint64_t frame; // 262 scanlines per frame.
+    int cycle = 0;
+    int scanline = 0; // 341 cycles per scanline.
+    uint64_t frame = 0; // 262 scanlines per frame.
+    void loadNameTableByte();
+    void loadAttributeTableByte();
+    void loadTileBitmapLow();
+    void loadTileBitmapHigh();
+    void setHoriV();
+    void setVertV();
+    void incCoarseX();
+    void incFineY();
     void tick();
 
 };

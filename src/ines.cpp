@@ -12,6 +12,7 @@ void ines::load(std::string path, CPU *c, PPU *p)
 
 	loadHeader();
 	loadRom();
+    setMirroringMode();
 
 	inesFile.close();	
 }
@@ -71,3 +72,11 @@ void ines::loadRom()
             std::cerr << "Failed to read CHR ROM!\n";
 	}
 } 
+
+void ines::setMirroringMode()
+{
+    mirroringMode m = (inesHeader[6] & 0x1) ? mirrorVertical : mirrorHorizontal;
+    ppu->setNametableMirroring(m);
+    //TODO: Implement proper mirror mode behaviour after implementing mappers.
+    //See https://wiki.nesdev.com/w/index.php/INES#Flags_6 for more details.
+}

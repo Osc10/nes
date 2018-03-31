@@ -22,6 +22,7 @@ private:
 
 	void loadHeader();
 	void loadRom();
+    void setMirroringMode();
 };
 
 #endif

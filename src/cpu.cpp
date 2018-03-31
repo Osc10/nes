@@ -328,7 +328,9 @@ void CPU::writeCurrentMem(uint8_t val)
 
 void CPU::executeCycle()
 {
+#ifndef NDEBUG
 	totalCycles++;
+#endif
     remainingCycles--;
     if(remainingCycles >= 0)
 		return;

@@ -10,9 +10,13 @@ uint8_t PPU::read(uint16_t address)
     if(address < 0x2000)
         return patternTables[address];
     else if(address < 0x3F00)
-        return nameTables[address & 0x0FFF]; // TODO: Implement different mirroring modes.
+        return nameTables[mirrorAddress()];
     else
-        return palettes[address & 0x1F];
+    {
+        uint8_t index = address & 0x1F;
+        index = (index % 4) ? index : 0; //Every multiple of four is a copy of $3F00
+        return palettes[index];
+    }
 }
 
 void PPU::write(uint16_t address, uint8_t val)
@@ -21,9 +25,34 @@ void PPU::write(uint16_t address, uint8_t val)
     if(address < 0x2000)
         patternTables[address] = val;
     else if(address < 0x3F00)
-        nameTables[address & 0x0FFF] = val;
+        nameTables[mirrorAddress()] = val;
     else
-        palettes[address & 0x1F] = val;
+    {
+        uint8_t index = address & 0x1F;
+        index = (index % 4) ? index : 0; //Every multiple of four is a copy of $3F00
+        palettes[index] = val;
+    }
+}
+
+uint16_t PPU::mirrorAddress(uint16_t addr)
+{
+    uint16_t val = address & 0x0FFF;
+    switch(mode)
+    {
+        case mirrorHorizontal:
+            val &= 0xBFF; //$2000 = $2400, $2800 = $2C00
+            break;
+        case mirrorVertical:
+            val &= 0x7FF; //$2000 = $2800, $2400 = $2C00
+            break;
+        case mirrorSingleScreen:
+            val &= 0x3FF; //$2000 = $2400 = $2800 = $2C00
+            break;
+        default:
+            //mirrorFourScreen: return val
+            break;
+    }
+    return val;
 }
 
 void PPU::loadPatternTables(std::ifstream *inesFile, int size, int offset)
@@ -91,10 +120,6 @@ void PPU::writeRegister(uint16_t address, uint8_t val)
 //$2000
 void PPU::writePPUCTRL(uint8_t val)
 {
-    uint16_t nametableSelect = (uint16_t)(val & 0x3) << 10;
-    nametableAddress = 0x2000 | nametableSelect;
-    assert(nametableAddress == 0x2000 || nametableAddress == 0x2400 ||
-           nametableAddress == 0x2800 || nametableAddress == 0x2C00);
     addressIncrement = (val & (1 << 2)) ? 32 : 1;
     spritePatternTableAddress = (uint16_t)(val & (1 << 3)) << 9;
     assert(spritePatternTableAddress == 0x0000 || spritePatternTableAddress == 0x1000);
@@ -108,7 +133,7 @@ void PPU::writePPUCTRL(uint8_t val)
     vblankNMI = (bool)(val & (1 << 7));
 
     // t: ...BA.. ........ = d: ......BA
-    t = (t & 0x73FF) | nametableSelect;
+    t = (t & 0x73FF) | ((uint16_t)(val & 0x3) << 10);
 }
 
 //$2001
@@ -193,6 +218,8 @@ void PPU::writePPUAADR(uint8_t val)
 }
 
 //$2007
+
+//Read PPU Scrolling - v updates differently during rendering
 uint8_t PPU::readPPUSTATUS()
 {
     uint8_t val;
@@ -210,6 +237,77 @@ void PPU::writeOAMDMA(uint8_t val)
 {
 
 }
+
+//----------------------------------------------------------------------------------------------------
+// Background
+//----------------------------------------------------------------------------------------------------
+void PPU::setHoriV()
+{
+    //v: ....F.. ...EDCBA = t: ....F.. ...EDCBA
+    v = (v & 0x7BE0) | (t & 0x041F);
+}
+
+void PPU::setVertV()
+{
+    //v: IHGF.ED CBA..... = t: IHGF.ED CBA.....
+    v = (v & 0x041F) | (t & 0x7BE0);
+}
+
+void PPU::incCoarseX()
+{
+    if((v & 0x1F == 31))
+    {
+        v &= 0x7FE0; // Coarse X set to 0
+        v ^= 0x0400; // Switch horizontal nametable
+    }
+    else
+        v += 1;
+}
+
+void PPU::incFineY()
+{
+    if(~(v & 0x7000)) // if fine Y < 7
+        v += 0x1000;
+    else
+    {
+        if((v & 0x03E0) == 0x03A0) // if coarse Y = 29
+        {
+            v &= 0x0C1F; // fine Y = 0, coarse Y = 0
+            v ^= 0x0800; // Switch vertical nametable
+        }
+        else if((v & 0x03E0) == 0x03E0) // if coarse Y = 31
+            v &= 0x0C1F; // fine Y = 0, coarse Y = 0
+        else
+        {
+            v &= 0x0FFF; // fine Y = 0
+            v += 0x0020; // increment coarse Y
+        }
+    }
+}
+
+void PPU::loadNameTableByte()
+{
+    nameTableByte = read(0x2000 | (v & 0x0FFF));
+}
+
+void PPU::loadAttributeTableByte()
+{
+
+}
+
+void PPU::loadTileBitmapLow()
+{
+
+}
+
+void PPU::loadTileBitmapHigh()
+{
+
+}
+
+//----------------------------------------------------------------------------------------------------
+// Sprites
+//----------------------------------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------------------------------
 // Rendering
@@ -245,7 +343,42 @@ void PPU::executeCycle()
 
     if(showBackground)
     {
+        if(scanline <= 239) //Visible scanlines.
+        {
+            if(cycle > 0) //Cycle 0 idle.
+            {
+                if(cycle <= 256)
+                {
 
+                }
+                else if(cycle <= 320)
+                {
+
+                }
+                else if(cycle <= 336)
+                {
+
+                }
+                else //Cycles 337-340
+                {
+
+                }
+            }
+
+        }//PPU idles during scanline 240.
+        else if(scanline == 241) //Vertical blanking lines: 241 - 260
+        {
+            if(cycle == 1) //vblank flag set on the second tick of scanline 241.
+            {
+                vblank = true;
+                if(vblankNMI)
+                    cpu->setNMI(true);
+            }
+        }
+        else if(scanline == 261) //Pre-render scanline
+        {
+
+        }
     }
 }
 
