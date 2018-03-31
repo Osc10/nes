@@ -12,12 +12,12 @@ Emulator::Emulator(string filePath)
 
 void Emulator::run()
 {
-	//while(true)
+    //while(true)
 
-	for(int i = 0; i < 300000; ++i)
-	{
+    for(int i = 0; i < 300000; ++i)
+    {
         cpu.executeCycle();
-	}
+    }
 }
 
 

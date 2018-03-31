@@ -2,11 +2,11 @@
 
 int main()
 {
-	string filePath = "../donkeykong.nes";
-	//"../test.nes"
-	Emulator emu(filePath);
+    string filePath = "../donkeykong.nes";
+    //"../test.nes"
+    Emulator emu(filePath);
 
     emu.run();
-	//emu.printPPUMemory();
+    //emu.printPPUMemory();
 
 }

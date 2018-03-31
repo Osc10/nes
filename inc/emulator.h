@@ -9,16 +9,16 @@
 class Emulator
 {
 public:
-	Emulator(string filePath);
+    Emulator(string filePath);
 
-	void run();
+    void run();
     void printPPUMemory() { ppu.printMemory(); }
 
 private:
-	CPU cpu;
-	PPU ppu;
-	ines rom;
-	Screen screen;
+    CPU cpu;
+    PPU ppu;
+    ines rom;
+    Screen screen;
 };
 
 #endif

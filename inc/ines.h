@@ -14,14 +14,14 @@ public:
     void load(std::string path, CPU *c, PPU *p);
 
 private:
-	uint8_t inesHeader[16]; 
+    uint8_t inesHeader[16];
     std::ifstream inesFile;
     std::string inesPath;
     CPU* cpu;
     PPU* ppu;
 
-	void loadHeader();
-	void loadRom();
+    void loadHeader();
+    void loadRom();
     void setMirroringMode();
 };
 

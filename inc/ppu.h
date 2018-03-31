@@ -29,7 +29,7 @@ class PPU
 {
 public:
     uint8_t readRegister(uint16_t address);
-	void writeRegister(uint16_t address, uint8_t val);
+    void writeRegister(uint16_t address, uint8_t val);
     void executeCycle();
     void loadPatternTables(std::ifstream *inesFile, int size, int offset);
     void printMemory(); //Helper function to print state of PPU memory.

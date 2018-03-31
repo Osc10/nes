@@ -68,17 +68,17 @@ uint8_t PPU::readRegister(uint16_t address)
     if(address == 0x4014)
         return databus;
 
-	switch(address & 0x7)
-	{
+    switch(address & 0x7)
+    {
         case 0x2:
             return readPPUSTATUS();
         case 0x4:
             return readOAMDATA();
         case 0x7:
             return readPPUDATA();
-		default:
+        default:
             return databus;
-	}
+    }
 }
 
 void PPU::writeRegister(uint16_t address, uint8_t val)
@@ -91,12 +91,12 @@ void PPU::writeRegister(uint16_t address, uint8_t val)
         return;
     }
 
-	// TODO: Does not write to $2000 in first 30000 cycles
-	switch(address & 0x7)
-	{
-		case 0x0:
+    // TODO: Does not write to $2000 in first 30000 cycles
+    switch(address & 0x7)
+    {
+        case 0x0:
             writePPUCTRL(val);
-			break;
+            break;
         case 0x1:
             writePPUMASK(val);
             break;
@@ -113,8 +113,8 @@ void PPU::writeRegister(uint16_t address, uint8_t val)
             writePPUDATA(val);
             break;
         default:
-			break;
-	}
+            break;
+    }
 }
 
 //$2000

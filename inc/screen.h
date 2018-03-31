@@ -10,13 +10,13 @@ class Screen
 {
 public:
     Screen(PPU *p);
-	~Screen();
+    ~Screen();
 
 private:
-	SDL_Window *window;
-	SDL_Renderer *renderer;
-	SDL_Texture *texture;
-	PPU *ppu;	
+    SDL_Window *window;
+    SDL_Renderer *renderer;
+    SDL_Texture *texture;
+    PPU *ppu;
 };
 
 #endif
