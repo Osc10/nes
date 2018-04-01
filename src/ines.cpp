@@ -76,7 +76,7 @@ void ines::loadRom()
 void ines::setMirroringMode()
 {
     mirroringMode m = (inesHeader[6] & 0x1) ? mirrorVertical : mirrorHorizontal;
-    ppu->setNametableMirroring(m);
+    ppu->setNameTableMirroring(m);
     //TODO: Implement proper mirror mode behaviour after implementing mappers.
     //See https://wiki.nesdev.com/w/index.php/INES#Flags_6 for more details.
 }

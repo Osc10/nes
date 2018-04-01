@@ -36,8 +36,11 @@ public:
     void linkCPU(CPU* c) {cpu = c;}
     void setNameTableMirroring(mirroringMode val) {mode = val;}
 
-    uint32_t pixels[256*240] = {0};
+    uint32_t *getPixelData() {return pixels;}
+    bool newFrame = false;
 private:
+    uint32_t pixels[256*240] = {0};
+
     //VRAM
     uint8_t palettes[0x20];
     uint8_t nameTables[0x1000];
@@ -102,6 +105,7 @@ private:
     void writePPUADDR(uint8_t val);
 
     //$2007 - PPUDATA
+    uint8_t readBuffer;
     uint8_t readPPUDATA();
     void writePPUDATA(uint8_t val);
 

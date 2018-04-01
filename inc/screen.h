@@ -11,6 +11,7 @@ class Screen
 public:
     Screen(PPU *p);
     ~Screen();
+    void renderFrame();
 
 private:
     SDL_Window *window;

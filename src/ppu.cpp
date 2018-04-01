@@ -37,7 +37,7 @@ void PPU::write(uint16_t address, uint8_t val)
 
 uint16_t PPU::mirrorAddress(uint16_t addr)
 {
-    uint16_t val = address & 0x0FFF;
+    uint16_t val = addr & 0x0FFF;
     switch(mode)
     {
         case mirrorHorizontal:
@@ -199,7 +199,7 @@ void PPU::writePPUSCROLL(uint8_t val)
 }
 
 //$2006
-void PPU::writePPUAADR(uint8_t val)
+void PPU::writePPUADDR(uint8_t val)
 {
     if(w == 0)
     {
@@ -221,16 +221,50 @@ void PPU::writePPUAADR(uint8_t val)
 //$2007
 
 //Read PPU Scrolling - v updates differently during rendering
-uint8_t PPU::readPPUSTATUS()
+uint8_t PPU::readPPUDATA()
 {
-    uint8_t val;
+    uint8_t val = read(v);
+
+    //Reading PPUDATA fills a read buffer.
+    //Details can be found at http://wiki.nesdev.com/w/index.php/PPU_registers#The_PPUDATA_read_buffer_.28post-fetch.29
+    if(v % 0x4000 < 0x3F00) // if v is not accessing palette data
+    {
+        uint8_t buffer = val;
+        val = readBuffer;
+        readBuffer = buffer;
+    }
+    else
+    {
+        readBuffer = read(v - 0x1000);
+    }
+
+    //Odd behaviour during rendering.
+    //See http://wiki.nesdev.com/w/index.php/PPU_scrolling#.242007_reads_and_writes for more details
+    if(scanline <= 239 || scanline == 261)
+    {
+        incHoriV();
+        incVertV();
+    }
+    else
+        v += addressIncrement;
+
     databus = val;
     return val;
 }
 
-void PPU::writePPUSTATUS(uint8_t val)
+void PPU::writePPUDATA(uint8_t val)
 {
+    write(v, val);
 
+    //Odd behaviour during rendering.
+    //See http://wiki.nesdev.com/w/index.php/PPU_scrolling#.242007_reads_and_writes for more details
+    if(scanline <= 239 || scanline == 261)
+    {
+        incHoriV();
+        incVertV();
+    }
+    else
+        v += addressIncrement;
 }
 
 //$4014
@@ -379,6 +413,7 @@ void PPU::tick()
         scanline = 0;
         frame++;
         f ^= 1;
+        newFrame = true;
     }
     else if(cycle > 340)
     {
@@ -389,6 +424,7 @@ void PPU::tick()
             scanline = 0;
             frame++;
             f ^= 1;
+            newFrame = true;
         }
     }
 }

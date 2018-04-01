@@ -12,11 +12,17 @@ Emulator::Emulator(string filePath)
 
 void Emulator::run()
 {
-    //while(true)
-
-    for(int i = 0; i < 300000; ++i)
+    while(true)
     {
         cpu.executeCycle();
+        ppu.executeCycle();
+        ppu.executeCycle();
+        ppu.executeCycle();
+        if(ppu.newFrame)
+        {
+            screen.renderFrame();
+            ppu.newFrame = false;
+        }
     }
 }
 

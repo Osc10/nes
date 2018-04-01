@@ -37,12 +37,10 @@ Screen::~Screen()
     SDL_Quit();
 }
 
-/*
 void Screen::renderFrame()
 {
     SDL_RenderClear(renderer);
-    SDL_UpdateTexture( texture, NULL, (void *) ppu->pixels, SCREEN_WIDTH * sizeof(uint32_t) );
+    SDL_UpdateTexture( texture, NULL, (void *)ppu->getPixelData(), SCREEN_WIDTH * sizeof(uint32_t) );
     SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_RenderPresent(renderer);
 }
-*/
