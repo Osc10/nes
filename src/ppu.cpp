@@ -1,5 +1,6 @@
 #include "ppu.h"
 #include "cpu.h"
+#include "palette.h"
 
 //----------------------------------------------------------------------------------------------------
 // PPU Memory
@@ -10,7 +11,7 @@ uint8_t PPU::read(uint16_t address)
     if(address < 0x2000)
         return patternTables[address];
     else if(address < 0x3F00)
-        return nameTables[mirrorAddress()];
+        return nameTables[mirrorAddress(address)];
     else
     {
         uint8_t index = address & 0x1F;
@@ -25,7 +26,7 @@ void PPU::write(uint16_t address, uint8_t val)
     if(address < 0x2000)
         patternTables[address] = val;
     else if(address < 0x3F00)
-        nameTables[mirrorAddress()] = val;
+        nameTables[mirrorAddress(address)] = val;
     else
     {
         uint8_t index = address & 0x1F;
@@ -253,7 +254,7 @@ void PPU::setVertV()
     v = (v & 0x041F) | (t & 0x7BE0);
 }
 
-void PPU::incCoarseX()
+void PPU::incHoriV()
 {
     if((v & 0x1F == 31))
     {
@@ -264,7 +265,7 @@ void PPU::incCoarseX()
         v += 1;
 }
 
-void PPU::incFineY()
+void PPU::incVertV()
 {
     if(~(v & 0x7000)) // if fine Y < 7
         v += 0x1000;
@@ -292,16 +293,62 @@ void PPU::loadNameTableByte()
 
 void PPU::loadAttributeTableByte()
 {
-
+    uint16_t addr = 0x23C0 | (v & 0x0C00); //Select attribute table.
+    addr |= ((v & 0x1C) >> 2) | ((v & 0x0380) >> 4); //Divide offset by 4.
+    uint16_t shift = ((v & 0x40) >> 4) | (v & 0x2);
+    attributeTableByte = (read(addr) >> shift) & 3;
 }
 
 void PPU::loadTileBitmapLow()
 {
-
+    uint16_t addr = ((uint16_t)nameTableByte << 4) | ((v >> 12) & 0x7) | backgroundPatternTableAddress;
+    // addr = nameTableByte*16 + fine Y + backgroundPatternTableAddress
+    tileBitmapLow = read(addr);
 }
 
 void PPU::loadTileBitmapHigh()
 {
+    uint16_t addr = ((uint16_t)nameTableByte << 4) | ((v >> 12) & 0x7) |
+                    backgroundPatternTableAddress | 8;
+    // addr = nameTableByte*16 + fine Y + backgroundPatternTableAddress + 8
+    tileBitmapHigh = read(addr);
+}
+
+void PPU::storeTileData()
+{
+    uint64_t data = 0;
+    for(int i = 0; i < 8; ++i)
+    {
+        data = data << 4;
+        data |= (attributeTableByte << 2);
+        data |= ((tileBitmapHigh & (1 << i)) >> i) << 1;
+        data |= (tileBitmapLow & (1 << i)) >> i;
+    }
+    shiftRegister |= data;
+}
+
+void PPU::fetchTileData()
+{
+    switch(cycle % 8)
+    {
+        case 0:
+            storeTileData();
+            break;
+        case 1:
+            loadNameTableByte();
+            break;
+        case 3:
+            loadAttributeTableByte();
+            break;
+        case 5:
+            loadTileBitmapLow();
+            break;
+        case 7:
+            loadTileBitmapHigh();
+            break;
+        default:
+            break;
+    }
 
 }
 
@@ -312,6 +359,15 @@ void PPU::loadTileBitmapHigh()
 //----------------------------------------------------------------------------------------------------
 // Rendering
 //----------------------------------------------------------------------------------------------------
+
+void PPU::renderPixel()
+{
+    uint16_t addr = (uint16_t)(shiftRegister >> (32 + (7 - x) * 4)) & 0x4;
+    uint8_t data = read(0x3F00 | addr);
+
+    pixels[cycle - 1 + scanline*256] = paletteRGBA[data];
+}
+
 void PPU::tick()
 {
     cycle++;
@@ -341,45 +397,45 @@ void PPU::executeCycle()
 {
     tick();
 
-    if(showBackground)
+    if(showBackground && scanline <= 239 && cycle >= 1 && cycle <= 256)
+        renderPixel();
+
+    if(scanline <= 239 || scanline == 261) // Visible Line or Pre-render line
     {
-        if(scanline <= 239) //Visible scanlines.
+        if(showBackground)
         {
-            if(cycle > 0) //Cycle 0 idle.
+            if((cycle >= 1 && cycle <= 256) || (cycle >= 321 && cycle <= 336))
             {
-                if(cycle <= 256)
-                {
-
-                }
-                else if(cycle <= 320)
-                {
-
-                }
-                else if(cycle <= 336)
-                {
-
-                }
-                else //Cycles 337-340
-                {
-
-                }
+                shiftRegister = shiftRegister << 4;
+                fetchTileData();
+                if(cycle == 256)
+                    incVertV();
+                else if((cycle % 8) == 0)
+                    incHoriV();
             }
+            else if(cycle == 257)
+                setHoriV();
+            else if((cycle == 337) || (cycle == 339))
+                loadNameTableByte(); //Unused
 
-        }//PPU idles during scanline 240.
-        else if(scanline == 241) //Vertical blanking lines: 241 - 260
-        {
-            if(cycle == 1) //vblank flag set on the second tick of scanline 241.
-            {
-                vblank = true;
-                if(vblankNMI)
-                    cpu->setNMI(true);
-            }
-        }
-        else if(scanline == 261) //Pre-render scanline
-        {
-
+            if(scanline == 261 && cycle >= 279 && cycle <= 305)
+                setVertV();
         }
     }
+    else if(scanline == 241 && cycle == 1)
+    {
+        vblank = true;
+        if(vblankNMI)
+            cpu->setNMI(true);
+    }
+
+    if(scanline == 261 && cycle == 1)
+    {
+        vblank = false;
+        spriteOverflow = false;
+        spriteZeroHit = false;
+    }
+
 }
 
 //----------------------------------------------------------------------------------------------------

@@ -5,20 +5,20 @@ set(SRC_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(NES_INC "${SRC_ROOT}/inc/")
 set(NES_SRC
-   	"${SRC_ROOT}/src/cpu.cpp"
-   	"${SRC_ROOT}/src/ppu.cpp"
-	"${SRC_ROOT}/src/ines.cpp"
-	"${SRC_ROOT}/src/emulator.cpp"
-	"${SRC_ROOT}/src/screen.cpp"
-	"${SRC_ROOT}/src/main.cpp"
+        "${SRC_ROOT}/src/cpu.cpp"
+        "${SRC_ROOT}/src/ppu.cpp"
+        "${SRC_ROOT}/src/ines.cpp"
+        "${SRC_ROOT}/src/emulator.cpp"
+        "${SRC_ROOT}/src/screen.cpp"
+        "${SRC_ROOT}/src/main.cpp"
 )
 
 set(NES_COMPILE_FLAGS
         -std=c++17
-	-g
-	-pedantic
-	-Wall
-	-Wextra
+        -g
+        -pedantic
+        -Wall
+        -Wextra
 )
 
 find_package(SDL2 REQUIRED)

@@ -35,6 +35,8 @@ public:
     void printMemory(); //Helper function to print state of PPU memory.
     void linkCPU(CPU* c) {cpu = c;}
     void setNameTableMirroring(mirroringMode val) {mode = val;}
+
+    uint32_t pixels[256*240] = {0};
 private:
     //VRAM
     uint8_t palettes[0x20];
@@ -55,8 +57,11 @@ private:
 
     //Data Latches
     uint8_t databus = 0;
-    uint8_t nameTableByte;
-    uint8_t attributeTableByte;
+    uint8_t nameTableByte = 0;
+    uint8_t attributeTableByte = 0;
+    uint8_t tileBitmapLow = 0;
+    uint8_t tileBitmapHigh = 0;
+    uint64_t shiftRegister = 0;
 
     //$2000 - PPUCTRL
     //VPHB SINN
@@ -116,9 +121,11 @@ private:
     void loadTileBitmapHigh();
     void setHoriV();
     void setVertV();
-    void incCoarseX();
-    void incFineY();
+    void incHoriV();
+    void incVertV();
+    void storeTileData();
+    void fetchTileData();
     void tick();
-
+    void renderPixel();
 };
 #endif
