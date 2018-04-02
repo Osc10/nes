@@ -20,7 +20,7 @@ Screen::Screen(PPU *p) : ppu(p)
                 cout << "Failed to create renderer. SDL Error: " << SDL_GetError() << endl;
             else
             {
-                texture = SDL_CreateTexture( renderer, SDL_PIXELFORMAT_ARGB8888,
+                texture = SDL_CreateTexture( renderer, SDL_PIXELFORMAT_RGBA8888,
                         SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT );
                 if(texture == NULL)
                     cout << "Failed to create texture. SDL Error: " << SDL_GetError() << endl;
