@@ -256,15 +256,10 @@ void PPU::writePPUDATA(uint8_t val)
 {
     write(v, val);
 
-    //Odd behaviour during rendering.
+    //TODO: Odd behaviour during rendering.
     //See http://wiki.nesdev.com/w/index.php/PPU_scrolling#.242007_reads_and_writes for more details
-    if(scanline <= 239 || scanline == 261)
-    {
-        incHoriV();
-        incVertV();
-    }
-    else
-        v += addressIncrement;
+
+    v += addressIncrement;
 }
 
 //$4014

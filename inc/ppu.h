@@ -116,8 +116,8 @@ private:
     CPU *cpu;
 
     //Rendering
-    int cycle = 0;
-    int scanline = 0; // 341 cycles per scanline.
+    int cycle = 340;
+    int scanline = 240; // 341 cycles per scanline.
     uint64_t frame = 0; // 262 scanlines per frame.
     void loadNameTableByte();
     void loadAttributeTableByte();

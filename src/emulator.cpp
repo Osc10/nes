@@ -13,6 +13,7 @@ Emulator::Emulator(string filePath)
 void Emulator::run()
 {
     while(true)
+    //for(int i = 0; i != 90000; ++i)
     {
         cpu.executeCycle();
         ppu.executeCycle();

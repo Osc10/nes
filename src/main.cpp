@@ -3,7 +3,7 @@
 int main()
 {
     string filePath = "../donkeykong.nes";
-    //"../test.nes"
+    //string filePath = "../test.nes";
     Emulator emu(filePath);
 
     emu.run();

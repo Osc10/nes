@@ -288,7 +288,7 @@ uint16_t CPU::readCurrentAddress()
         case indirectIndexed:
             offset = read(PC + 1);
             if(offset != 0xFF)
-                addr = read16(read(PC + 1));
+                addr = read16(offset);
             else
                 addr = (read(0) << 8) | read(0xFF);
             pageCrossed = pageCross(addr, addr + Y);
@@ -334,16 +334,23 @@ void CPU::executeCycle()
     remainingCycles--;
     if(remainingCycles >= 0)
         return;
+
+    //Interrupt handling
+    if(nmiFlag)
+    {
+        nmi();
+        nmiFlag = false;
+    }
+    else if(irqFlag && !I)
+    {
+        irq();
+        irqFlag = false;
+    }
+
     readOpcode();
 #ifndef NDEBUG
     printLog(opcode);
 #endif
-
-    //Interrupt handling
-    if(nmiFlag)
-        nmi();
-    else if(irqFlag && !I)
-        irq();
 
     switch(opcode)
     {
@@ -796,6 +803,7 @@ void CPU::initialize()
 {
     S = 0xFD;
     setFlags(0x4); //IRQ disabled
+
     PC = read16(0xFFFC);
     //PC = 0xC000; // Automating nestest
 }
@@ -817,6 +825,7 @@ void CPU::printLog(uint8_t opcode)
     std::cout << std::setw(10) << "A:" << std::setfill('0') << std::setw(2) << (int)A;
     std::cout << std::setfill(' ') << std::setw(3) << "X:" << std::setfill('0') << std::setw(2) << (int)X;
     std::cout << std::setfill(' ') << std::setw(3) << "Y:" << std::setfill('0') << std::setw(2) << (int)Y;
+    std::cout << std::setfill(' ') << std::setw(3) << "P:" << std::setfill('0') << std::setw(2) << (int)readFlags();
     std::cout << std::setfill(' ') << std::setw(4) << "SP:" << std::setfill('0') << std::setw(2) << (int)S;
     std::cout << std::setfill(' ') << std::setw(5) << "CYC:" << std::setfill(' ') << std::dec << std::setw(3) << ((totalCycles - 1) * 3) % 341;
     std::cout << std::endl;
