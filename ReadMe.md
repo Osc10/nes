@@ -9,8 +9,8 @@ Currently there is only support for mapper 0 games - the next step will be emula
 This emulator runs on Linux using the SDL2 library for video output.
 
 ## Screenshots
-![Donkey Kong](http://i.imgur.com/YJvXLda.png)
-![Mario Bros.](https://i.imgur.com/RBRHEyY.png)
+![Donkey Kong](http://i.imgur.com/X4o7BOX.jpg)
+![Mario Bros.](https://i.imgur.com/WUUznoJ.jpg)
 
 ## Usage
 Using the emulator currently requires editing src/main.cpp to set the file location of an NES ROM file.
@@ -23,7 +23,7 @@ Controls are currently fixed, with the following mappings.
         Z             A
         X             B
 Backspace        Select
-   Retur          Start
+   Return         Start
        Up            Up
      Down          Down
      Left          Left

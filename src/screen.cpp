@@ -2,7 +2,7 @@
 
 static const int SCREEN_WIDTH = 256;
 static const int SCREEN_HEIGHT = 224;
-static const int sizeMultiplier = 2;
+static const int sizeMultiplier = 1;
 
 Screen::Screen(PPU *p) : ppu(p)
 {
