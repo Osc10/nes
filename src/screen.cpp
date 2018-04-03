@@ -2,6 +2,7 @@
 
 static const int SCREEN_WIDTH = 256;
 static const int SCREEN_HEIGHT = 224;
+static const int sizeMultiplier = 2;
 
 Screen::Screen(PPU *p) : ppu(p)
 {
@@ -10,7 +11,7 @@ Screen::Screen(PPU *p) : ppu(p)
     else
     {
         window = SDL_CreateWindow( "NES Emulator", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                                    SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
+                                    SCREEN_WIDTH * sizeMultiplier, SCREEN_HEIGHT * sizeMultiplier, SDL_WINDOW_SHOWN );
         if(window == NULL)
             std::cout << "Failed to create window. SDL Error: " << SDL_GetError() << std::endl;
         else
@@ -27,6 +28,7 @@ Screen::Screen(PPU *p) : ppu(p)
             }
         }
     }
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
 }
 
 Screen::~Screen()

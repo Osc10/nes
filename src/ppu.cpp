@@ -282,7 +282,7 @@ void PPU::setVertV()
 
 void PPU::incHoriV()
 {
-    if((v & 0x1F == 31))
+    if((v & 0x1F) == 31)
     {
         v &= 0x7FE0; // Coarse X set to 0
         v ^= 0x0400; // Switch horizontal nametable
@@ -293,9 +293,7 @@ void PPU::incHoriV()
 
 void PPU::incVertV()
 {
-    if(~(v & 0x7000)) // if fine Y < 7
-        v += 0x1000;
-    else
+    if((v & 0x7000) == 0x7000) // if fine Y == 7
     {
         if((v & 0x03E0) == 0x03A0) // if coarse Y = 29
         {
@@ -310,6 +308,8 @@ void PPU::incVertV()
             v += 0x0020; // increment coarse Y
         }
     }
+    else
+        v += 0x1000;
 }
 
 void PPU::loadNameTableByte()
@@ -343,7 +343,7 @@ void PPU::loadTileBitmapHigh()
 void PPU::storeTileData()
 {
     uint64_t data = 0;
-    for(int i = 0; i < 8; ++i)
+    for(int i = 7; i >= 0; --i)
     {
         data = data << 4;
         data |= (attributeTableByte << 2);
@@ -564,14 +564,14 @@ void PPU::executeCycle()
         if(cycle >= 257 && cycle <= 320)
             oamAddress = 0;
 
-        if((showBackground || showSprites) && visibleLine && cycle == 257)
+        if(showBackground || showSprites)
         {
-            clearOAM();
-            evaluateSprites();
-        }
+            if(visibleLine && cycle == 257)
+            {
+                clearOAM();
+                evaluateSprites();
+            }
 
-        if(showBackground)
-        {
             if((cycle >= 1 && cycle <= 256) || (cycle >= 321 && cycle <= 336))
             {
                 shiftRegister = shiftRegister << 4;
@@ -596,6 +596,9 @@ void PPU::executeCycle()
         if(vblankNMI)
             cpu->setNMI(true);
     }
+
+    if(preRenderLine && cycle == 257)
+        setHoriV();
 
     if(preRenderLine && cycle == 1)
     {
