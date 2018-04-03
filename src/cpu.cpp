@@ -59,8 +59,18 @@ void CPU::write(uint16_t address, uint8_t val)
         ram[address & 0x7FF] = val;
     else if(address < 0x4020)
     {
-        if(address < 0x4000 || address == 0x4014)
+        if(address < 0x4000)
             ppu->writeRegister(address, val);
+        else if(address == 0x4014)
+        {
+            int oamAddr = ((uint16_t)val) << 8;
+            for(int i = 0; i != 0x100; ++i)
+            {
+                ppu->writeOAMDMA(i, read(oamAddr|i));
+            }
+            int writeCycles = (totalCycles % 2) ? 514 : 513;
+            remainingCycles += writeCycles;
+        }
         else
             ioRegisters[address & 0x1F] = val;
     }

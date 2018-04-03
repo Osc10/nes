@@ -2,10 +2,10 @@
 
 int main()
 {
-    string filePath = "../donkeykong.nes";
+    //string filePath = "../donkeykong.nes";
     //string filePath = "../mario-bros.nes";
 
-    //string filePath = "../test.nes";
+    string filePath = "../test.nes";
     Emulator emu(filePath);
 
     emu.run();

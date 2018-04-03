@@ -86,12 +86,6 @@ void PPU::writeRegister(uint16_t address, uint8_t val)
 {
     databus = val;
 
-    if(address == 0x4014)
-    {
-        writeOAMDMA(val);
-        return;
-    }
-
     // TODO: Does not write to $2000 in first 30000 cycles
     switch(address & 0x7)
     {
@@ -162,20 +156,24 @@ uint8_t PPU::readPPUSTATUS()
 //$2003
 void PPU::writeOAMADDR(uint8_t val)
 {
-
+    oamAddress = val;
 }
 
 //$2004
 uint8_t PPU::readOAMDATA()
 {
-    uint8_t val;
+    //TODO: Attempting to read during secondary OAM clear returns $FF
+    uint8_t val = oamData[oamAddress];
     databus = val;
     return val;
 }
 
 void PPU::writeOAMDATA(uint8_t val)
 {
-
+    val = ((oamAddress % 4) == 2) ? val & 0xE3 : val;
+    oamData[oamAddress] = val;
+    databus = val;
+    ++oamAddress;
 }
 
 //$2005
@@ -263,9 +261,11 @@ void PPU::writePPUDATA(uint8_t val)
 }
 
 //$4014
-void PPU::writeOAMDMA(uint8_t val)
+void PPU::writeOAMDMA(uint8_t addr, uint8_t val)
 {
-
+    val = ((addr % 4) == 2) ? val & 0xE3 : val;
+    databus = val;
+    oamData[addr] = val;
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -384,6 +384,98 @@ void PPU::fetchTileData()
 //----------------------------------------------------------------------------------------------------
 // Sprites
 //----------------------------------------------------------------------------------------------------
+void PPU::clearOAM()
+{
+    for(int i = 0; i != 8; ++i)
+        oamPixelData[i] = oamPriority[i] = oamXPos[i] = 0;
+}
+
+void PPU::fetchSpriteData(int index, int spriteNo, int row)
+{
+    int m = spriteNo << 2;
+    uint16_t tileNumber = (uint16_t)oamData[m + 1];
+    uint8_t oamAttributes = oamData[m + 2];
+    oamXPos[index] = oamData[m + 3];
+
+    oamPriority[index] = (oamAttributes & (1 << 5)) >> 5;
+    bool flipHorizontal = oamAttributes & (1 << 6);
+    bool flipVertical = oamAttributes & (1 << 7);
+
+    row = (flipVertical) ? spriteHeight - 1 - row : row;
+    uint16_t addr;
+
+    if(spriteHeight == 8)
+    {
+        addr = spritePatternTableAddress | (tileNumber << 4);
+        addr += row;
+    }
+    else
+    {
+        uint16_t patternTableSelect = (tileNumber & 0x1) ? 0x1000 : 0;
+        tileNumber = (row < 8) ? (tileNumber & 0xFE) : (tileNumber & 0xFE) | 0x1;
+        addr = patternTableSelect | (tileNumber << 4);
+        addr += (row < 8) ? row : row - 8;
+    }
+
+    uint8_t spriteBitmapLow = read(addr);
+    uint8_t spriteBitmapHigh = read(addr + 8);
+    uint8_t oamPalette = (oamAttributes & 0x3) << 2;
+    oamPixelData[index] = 0;
+    if(flipHorizontal)
+        for(int i = 7; i >= 0; --i)
+        {
+            oamPixelData[index] <<= 4;
+            oamPixelData[index] |= oamPalette;
+            oamPixelData[index] |= (((spriteBitmapHigh) & (1 << i)) >> i) << 1;
+            oamPixelData[index] |=  ((spriteBitmapLow)  & (1 << i)) >> i;
+        }
+    else
+        for(int i = 0; i != 8; ++i)
+        {
+            oamPixelData[index] <<= 4;
+            oamPixelData[index] |= oamPalette;
+            oamPixelData[index] |= (((spriteBitmapHigh) & (1 << i)) >> i) << 1;
+            oamPixelData[index] |=  ((spriteBitmapLow)  & (1 << i)) >> i;
+        }
+}
+
+void PPU::evaluateSprites()
+{
+    int n = 0;
+    int i = 0;
+
+    spriteZero = false;
+
+    while(i < 8 && n < 64)
+    {
+        int row = scanline - oamData[n << 2];
+        if(row >= 0 && row < spriteHeight)
+        {
+            fetchSpriteData(i, n, row);
+            spriteZero = (n == 0) ? true : spriteZero;
+            ++i;
+        }
+        ++n;
+    }
+
+    int m = 0;
+    while(n < 64) //Testing for sprite overflow.
+    {
+        int yPos = oamData[(n << 2) + m];
+        if(scanline >= yPos && scanline < yPos + spriteHeight)
+        {
+            spriteOverflow = true;
+            break;
+        }
+        else
+        {
+            ++n;
+            ++m; //Hardware bug, causing sprite overflow flag to be set incorrectly.
+            m %= 4;
+        }
+    }
+
+}
 
 //----------------------------------------------------------------------------------------------------
 // Rendering
@@ -391,8 +483,32 @@ void PPU::fetchTileData()
 
 void PPU::renderPixel()
 {
-    uint16_t addr = (uint16_t)(shiftRegister >> (32 + (7 - x) * 4)) & 0x4;
-    uint8_t data = read(0x3F00 | addr);
+    uint16_t addr = (uint16_t)(shiftRegister >> (32 + (7 - x) * 4)) & 0xF;
+    uint8_t backgroundData = read(0x3F00 | addr);
+    uint8_t data = backgroundData;
+
+    bool backgroundOpaque = addr & 0x3;
+
+    for(int i = 0; i != 8; ++i)
+    {
+        addr = oamPixelData[i] >> 28;
+        if(addr & 0x3) //sprite opaque
+        {
+            data = (oamPriority[i]) ? backgroundData :
+                                      read(0x3F10 | addr);
+
+            if(i == 0 && spriteZero && backgroundOpaque)
+                spriteZeroHit = true;
+
+            break;
+        }
+    }
+
+    for(int i = 0; i != 8; ++i)
+    {
+        oamPixelData[i] <<= (oamXPos[i]) ? 0 : 4;
+        oamXPos[i] -= (oamXPos[i]) ? 1 : 0;
+    }
 
     pixels[cycle - 1 + scanline*256] = paletteRGBA[data];
 }
@@ -415,8 +531,7 @@ void PPU::tick()
         cycle = 0;
         scanline++;
         if(scanline > 261)
-        {
-            scanline = 0;
+        { scanline = 0;
             frame++;
             f ^= 1;
             newFrame = true;
@@ -428,11 +543,23 @@ void PPU::executeCycle()
 {
     tick();
 
-    if(showBackground && scanline <= 239 && cycle >= 1 && cycle <= 256)
+    bool visibleLine = (scanline <= 239);
+    bool preRenderLine = (scanline == 261);
+
+    if((showBackground || showSprites) && scanline <= 239 && cycle >= 1 && cycle <= 256)
         renderPixel();
 
-    if(scanline <= 239 || scanline == 261) // Visible Line or Pre-render line
+    if(visibleLine || preRenderLine)
     {
+        if(cycle >= 257 && cycle <= 320)
+            oamAddress = 0;
+
+        if((showBackground || showSprites) && visibleLine && cycle == 257)
+        {
+            clearOAM();
+            evaluateSprites();
+        }
+
         if(showBackground)
         {
             if((cycle >= 1 && cycle <= 256) || (cycle >= 321 && cycle <= 336))
@@ -460,7 +587,7 @@ void PPU::executeCycle()
             cpu->setNMI(true);
     }
 
-    if(scanline == 261 && cycle == 1)
+    if(preRenderLine && cycle == 1)
     {
         vblank = false;
         spriteOverflow = false;

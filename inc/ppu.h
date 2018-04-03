@@ -36,6 +36,9 @@ public:
     void linkCPU(CPU* c) {cpu = c;}
     void setNameTableMirroring(mirroringMode val) {mode = val;}
 
+    //$4014 - OAMDMA
+    void writeOAMDMA(uint8_t addr, uint8_t val);
+
     uint32_t *getPixelData() {return pixels;}
     bool newFrame = false;
 private:
@@ -58,13 +61,19 @@ private:
     uint8_t w = 0; //First or second write toggle, shared by PPUADDR and PPUSCROLL (1 bit)
     uint8_t f = 0; //Even or odd frame (1 bit)
 
-    //Data Latches
     uint8_t databus = 0;
+    //Background Data
     uint8_t nameTableByte = 0;
     uint8_t attributeTableByte = 0;
     uint8_t tileBitmapLow = 0;
     uint8_t tileBitmapHigh = 0;
     uint64_t shiftRegister = 0;
+
+    //OAM Data
+    bool spriteZero; //Switch on if sprite 0 is fetched into secondary OAM.
+    uint8_t oamPriority[8]; //0: in front, 1: behind background.
+    uint32_t oamPixelData[8];
+    uint8_t oamXPos[8];
 
     //$2000 - PPUCTRL
     //VPHB SINN
@@ -92,6 +101,7 @@ private:
     uint8_t readPPUSTATUS();
 
     //$2003 - OAMADDR
+    uint8_t oamAddress;
     void writeOAMADDR(uint8_t val);
 
     //$2004 - OAMDATA
@@ -109,9 +119,6 @@ private:
     uint8_t readPPUDATA();
     void writePPUDATA(uint8_t val);
 
-    //$4014 - OAMDMA
-    void writeOAMDMA(uint8_t val);
-
     //NMI Handling
     CPU *cpu;
 
@@ -119,6 +126,9 @@ private:
     int cycle = 340;
     int scanline = 240; // 341 cycles per scanline.
     uint64_t frame = 0; // 262 scanlines per frame.
+    void tick();
+    void renderPixel();
+    //Background
     void loadNameTableByte();
     void loadAttributeTableByte();
     void loadTileBitmapLow();
@@ -129,7 +139,11 @@ private:
     void incVertV();
     void storeTileData();
     void fetchTileData();
-    void tick();
-    void renderPixel();
+    //Sprite
+    int spriteCounter = 0;
+    void clearOAM();
+    void evaluateSprites();
+    void fetchSpriteData(int index, int spriteNo, int row);
+
 };
 #endif
