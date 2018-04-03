@@ -16,6 +16,7 @@ This emulator runs on Linux using the SDL2 library for video output.
 Using the emulator currently requires editing src/main.cpp to set the file location of an NES ROM file.
 Provided the ROM does not require a mapper, the emulator should be able to run it smoothly.
 Controls are currently fixed, with the mappings:
+'''
 -----------------------
       key        button
 -----------------------
@@ -27,3 +28,4 @@ Backspace        Select
      Down          Down
      Left          Left
     Right         Right
+'''
