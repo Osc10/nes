@@ -40,7 +40,7 @@ public:
     void writeOAMDMA(uint8_t addr, uint8_t val);
 
     uint32_t *getPixelData() {return pixels;}
-    bool newFrame = false;
+    bool postRender = false;
 private:
     uint32_t pixels[256*240] = {0};
 

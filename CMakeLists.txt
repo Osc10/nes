@@ -6,11 +6,12 @@ set(SRC_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 set(NES_INC "${SRC_ROOT}/inc/")
 set(NES_SRC
         "${SRC_ROOT}/src/cpu.cpp"
-        "${SRC_ROOT}/src/ppu.cpp"
-        "${SRC_ROOT}/src/ines.cpp"
+        "${SRC_ROOT}/src/controller.cpp"
         "${SRC_ROOT}/src/emulator.cpp"
-        "${SRC_ROOT}/src/screen.cpp"
+        "${SRC_ROOT}/src/ines.cpp"
         "${SRC_ROOT}/src/main.cpp"
+        "${SRC_ROOT}/src/ppu.cpp"
+        "${SRC_ROOT}/src/screen.cpp"
 )
 
 set(NES_COMPILE_FLAGS
@@ -19,6 +20,7 @@ set(NES_COMPILE_FLAGS
         -pedantic
         -Wall
         -Wextra
+        -DNDEBUG
 )
 
 find_package(SDL2 REQUIRED)

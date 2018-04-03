@@ -95,8 +95,11 @@ void PPU::writeRegister(uint16_t address, uint8_t val)
         case 0x1:
             writePPUMASK(val);
             break;
-        case 0x4:
+        case 0x3:
             writeOAMADDR(val);
+            break;
+        case 0x4:
+            writeOAMDATA(val);
             break;
         case 0x5:
             writePPUSCROLL(val);
@@ -182,7 +185,7 @@ void PPU::writePPUSCROLL(uint8_t val)
     if(w == 0)
     {
         // t: ....... ...HGFED = d: HGFED...
-        t = (t & 0x7FE0) & (uint16_t)(val >> 3);
+        t = (t & 0x7FE0) | (uint16_t)(val >> 3);
         // x:              CBA = d: .....CBA
         x = val & 0x7;
         w = 1;
@@ -236,15 +239,9 @@ uint8_t PPU::readPPUDATA()
         readBuffer = read(v - 0x1000);
     }
 
-    //Odd behaviour during rendering.
+    //TODO: Odd behaviour during rendering.
     //See http://wiki.nesdev.com/w/index.php/PPU_scrolling#.242007_reads_and_writes for more details
-    if(scanline <= 239 || scanline == 261)
-    {
-        incHoriV();
-        incVertV();
-    }
-    else
-        v += addressIncrement;
+    v += addressIncrement;
 
     databus = val;
     return val;
@@ -421,7 +418,7 @@ void PPU::fetchSpriteData(int index, int spriteNo, int row)
     uint8_t spriteBitmapHigh = read(addr + 8);
     uint8_t oamPalette = (oamAttributes & 0x3) << 2;
     oamPixelData[index] = 0;
-    if(flipHorizontal)
+    if(!flipHorizontal)
         for(int i = 7; i >= 0; --i)
         {
             oamPixelData[index] <<= 4;
@@ -481,26 +478,38 @@ void PPU::evaluateSprites()
 // Rendering
 //----------------------------------------------------------------------------------------------------
 
-void PPU::renderPixel()
+inline void PPU::renderPixel()
 {
-    uint16_t addr = (uint16_t)(shiftRegister >> (32 + (7 - x) * 4)) & 0xF;
-    uint8_t backgroundData = read(0x3F00 | addr);
-    uint8_t data = backgroundData;
+    uint16_t backgroundAddr = 0;
+    if(cycle > 8 || showBackgroundLeft)
+        backgroundAddr = (uint16_t)(shiftRegister >> (32 + (7 - x) * 4)) & 0xF;
 
-    bool backgroundOpaque = addr & 0x3;
+    bool backgroundOpaque = backgroundAddr & 0x3;
+
+    uint8_t spriteAddr;
+    uint8_t addr = backgroundAddr;
 
     for(int i = 0; i != 8; ++i)
     {
-        addr = oamPixelData[i] >> 28;
-        if(addr & 0x3) //sprite opaque
+        if(oamXPos[i] == 0)
         {
-            data = (oamPriority[i]) ? backgroundData :
-                                      read(0x3F10 | addr);
+            spriteAddr = oamPixelData[i] >> 28;
+            bool spriteOpaque = spriteAddr & 0x3;
 
-            if(i == 0 && spriteZero && backgroundOpaque)
+            if(spriteOpaque)
+            {
+                if(cycle <= 8)
+                spriteAddr = (showSpritesLeft) ? spriteAddr : 0;
+
+                addr = (oamPriority[i]) ? ((backgroundOpaque) ? backgroundAddr : spriteAddr | 0x10) :
+                            spriteAddr | 0x10;
+
+                if(i == 0 && spriteZero && backgroundOpaque &&
+                    (cycle > 8 || (showBackgroundLeft && showSpritesLeft)))
                 spriteZeroHit = true;
 
-            break;
+                break;
+            }
         }
     }
 
@@ -510,31 +519,31 @@ void PPU::renderPixel()
         oamXPos[i] -= (oamXPos[i]) ? 1 : 0;
     }
 
-    pixels[cycle - 1 + scanline*256] = paletteRGBA[data];
+    pixels[cycle - 1 + scanline*256] = paletteRGBA[read(0x3F00 | addr)];
 }
 
 void PPU::tick()
 {
-    cycle++;
 
     //Odd frames are one cycle shorter with rendering enabled
-    if(cycle == 340 && scanline == 261 && f == 1 && (showBackground || showSprites))
+    if(cycle == 339 && scanline == 261 && f == 1 && (showBackground || showSprites))
     {
         cycle = 0;
         scanline = 0;
         frame++;
         f ^= 1;
-        newFrame = true;
     }
-    else if(cycle > 340)
+    cycle++;
+
+    if(cycle > 340)
     {
         cycle = 0;
         scanline++;
         if(scanline > 261)
-        { scanline = 0;
+        {
+            scanline = 0;
             frame++;
             f ^= 1;
-            newFrame = true;
         }
     }
 }
@@ -544,6 +553,7 @@ void PPU::executeCycle()
     tick();
 
     bool visibleLine = (scanline <= 239);
+    postRender = (cycle == 0 && scanline == 240) ? true : postRender;
     bool preRenderLine = (scanline == 261);
 
     if((showBackground || showSprites) && scanline <= 239 && cycle >= 1 && cycle <= 256)

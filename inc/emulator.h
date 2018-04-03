@@ -5,11 +5,12 @@
 #include "ines.h"
 #include "cpu.h"
 #include "ppu.h"
+#include "controller.h"
 
 class Emulator
 {
 public:
-    Emulator(string filePath);
+    Emulator(std::string filePath);
 
     void run();
     void printPPUMemory() { ppu.printMemory(); }
@@ -17,6 +18,7 @@ public:
 private:
     CPU cpu;
     PPU ppu;
+    Controller joypad;
     ines rom;
     Screen screen;
 };

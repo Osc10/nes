@@ -10,3 +10,4 @@ build/Makefile
 build/nes
 *.user
 *.autosave
+callgrind.out.*

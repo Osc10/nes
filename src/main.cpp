@@ -2,10 +2,10 @@
 
 int main()
 {
-    //string filePath = "../donkeykong.nes";
-    //string filePath = "../mario-bros.nes";
+    //std::string filePath = "../donkeykong.nes";
+    std::string filePath = "../mario-bros.nes";
 
-    string filePath = "../test.nes";
+    //std::string filePath = "../test.nes";
     Emulator emu(filePath);
 
     emu.run();

@@ -8,6 +8,7 @@
 #include <string>
 
 class PPU;
+class Controller;
 
 class CPU //Implementation of the 2A03 processor
 {
@@ -15,6 +16,7 @@ public:
     void executeCycle();
     void initialize();
     void linkPPU(PPU *p) {ppu = p;}
+    void linkController(Controller *c) {joypad = c;}
     void loadPRGROM(std::ifstream *inesFile, int size, int offset);
     void setNMI(bool flag) {nmiFlag = flag;}
     void setIRQ(bool flag) {irqFlag = flag;}
@@ -37,6 +39,7 @@ private:
     uint8_t expansionROM[0x2000]; //TODO: Implement expansion ROM behaviour.
     uint8_t programROM[0x8000];
     PPU* ppu;
+    Controller* joypad;
     uint8_t read(uint16_t address);
     uint16_t read16(uint16_t address);
     void write(uint16_t address, uint8_t val);
@@ -48,9 +51,9 @@ private:
 
     //Instructions
     uint8_t opcode;
-    uint64_t instructionNumber = 0;
-#ifndef NDEBUG
     uint64_t totalCycles = 0;
+#ifndef NDEBUG
+    uint64_t instructionNumber = 0;
 #endif
     int remainingCycles = 0;
     bool pageCrossed = false;

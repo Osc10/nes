@@ -1,5 +1,6 @@
 #include "cpu.h"
 #include "ppu.h"
+#include "controller.h"
 
 //----------------------------------------------------------------------------------------------------
 // Flags
@@ -37,6 +38,8 @@ uint8_t CPU::read(uint16_t address)
     {
         if(address < 0x4000 || address == 0x4014)
             ppu->readRegister(address);
+        else if(address == 0x4016 || address == 0x4017)
+            joypad->readIO(address);
         else
             return ioRegisters[address & 0x1F]; //Placeholder
     }
@@ -63,14 +66,17 @@ void CPU::write(uint16_t address, uint8_t val)
             ppu->writeRegister(address, val);
         else if(address == 0x4014)
         {
-            int oamAddr = ((uint16_t)val) << 8;
+            uint16_t oamAddr = ((uint16_t)val) << 8;
             for(int i = 0; i != 0x100; ++i)
             {
-                ppu->writeOAMDMA(i, read(oamAddr|i));
+                ppu->writeOAMDMA(i, read(oamAddr));
+                ++oamAddr;
             }
             int writeCycles = (totalCycles % 2) ? 514 : 513;
             remainingCycles += writeCycles;
         }
+        else if(address == 0x4016 || address == 0x4017)
+            joypad->writeIO(address, val);
         else
             ioRegisters[address & 0x1F] = val;
     }
@@ -338,9 +344,7 @@ void CPU::writeCurrentMem(uint8_t val)
 
 void CPU::executeCycle()
 {
-#ifndef NDEBUG
     totalCycles++;
-#endif
     remainingCycles--;
     if(remainingCycles >= 0)
         return;
@@ -818,6 +822,7 @@ void CPU::initialize()
     //PC = 0xC000; // Automating nestest
 }
 
+#ifndef NDEBUG
 void CPU::printLog(uint8_t opcode)
 {
     ++instructionNumber;
@@ -840,3 +845,4 @@ void CPU::printLog(uint8_t opcode)
     std::cout << std::setfill(' ') << std::setw(5) << "CYC:" << std::setfill(' ') << std::dec << std::setw(3) << ((totalCycles - 1) * 3) % 341;
     std::cout << std::endl;
 }
+#endif
